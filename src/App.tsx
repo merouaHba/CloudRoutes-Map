@@ -14,6 +14,8 @@ import { Spinner } from "./components/Spinner.tsx";
 import clsx from "clsx";
 import { userIcon } from "./icons.ts";
 import { useGlobalStore } from "./store";
+import { SearchBar } from "./components/SearchBar.tsx";
+import { RouteDisplay } from "./components/RouteDisplay.tsx";
 
 // TODO: fetch traccar urls from api
 
@@ -33,9 +35,11 @@ function App() {
     isRefetching,
   } = useDefaultLocation();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [displayLocation, setDisplayLocation] = useState(false);
+  const [routeData, setRouteData] = useState<any>(null);
   const map = useRef<any>(null);
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
 
@@ -63,6 +67,15 @@ function App() {
       );
     }
   }
+
+  const handleRouteFound = (data: any) => {
+    setRouteData(data);
+    setIsSearchOpen(false);
+  };
+
+  const handleClearRoute = () => {
+    setRouteData(null);
+  };
 
   if (isLoading || isRefetching)
     return (
@@ -96,9 +109,19 @@ function App() {
         <BusStopsMarkers />
         <DevicePositionMarkers />
 
+        {/* Route visualization */}
+        {routeData && (
+          <RouteDisplay
+            routeData={routeData}
+            onClose={handleClearRoute}
+            mapRef={map}
+          />
+        )}
+
+        {/* Filters button */}
         <button
           className="button button-square filters-menu"
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsFiltersOpen(true)}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -111,6 +134,7 @@ function App() {
           </svg>
         </button>
 
+        {/* Location button */}
         {!!window.env && (
           <>
             <button
@@ -157,9 +181,26 @@ function App() {
           </>
         )}
 
+        {/* Search button */}
+        <button
+          className="button button-square search-button"
+          onClick={() => setIsSearchOpen(true)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="20px"
+            height="20px"
+            fill="#1f1f1f"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </button>
+
+        {/* Search modal */}
         <Modal
-          isOpen={isOpen}
-          onRequestClose={() => setIsOpen(false)}
+          isOpen={isSearchOpen}
+          onRequestClose={() => setIsSearchOpen(false)}
           style={{
             content: {
               bottom: "0",
@@ -175,7 +216,34 @@ function App() {
             overlay: { zIndex: 99999 },
           }}
         >
-          <Filters onApply={() => setIsOpen(false)} />
+          <SearchBar
+            onRouteFound={handleRouteFound}
+            onClearRoute={handleClearRoute}
+            currentLocation={location}
+            onClose={() => setIsSearchOpen(false)}
+          />
+        </Modal>
+
+        {/* Filters modal */}
+        <Modal
+          isOpen={isFiltersOpen}
+          onRequestClose={() => setIsFiltersOpen(false)}
+          style={{
+            content: {
+              bottom: "0",
+              left: "50%",
+              right: "auto",
+              top: "auto",
+              transform: "translateX(-50%)",
+              width: "90%",
+              maxWidth: "500px",
+              borderRadius: "16px 16px 0 0",
+              padding: "20px",
+            },
+            overlay: { zIndex: 99999 },
+          }}
+        >
+          <Filters onApply={() => setIsFiltersOpen(false)} />
         </Modal>
       </MapContainer>
     </>
