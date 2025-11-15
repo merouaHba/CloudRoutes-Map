@@ -1,6 +1,7 @@
-import { Polyline, Marker, Popup } from "react-leaflet";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Polyline, Marker } from "react-leaflet";
 import { LatLngExpression } from "leaflet";
-import { busIcon, busStopIcon } from "../icons";
+import { busStopIcon } from "../icons";
 import { useEffect } from "react";
 
 type RouteStep = {
@@ -47,7 +48,6 @@ export function RouteDisplay({
   onClose,
   mapRef,
 }: RouteDisplayProps) {
-  // Auto-fit map to route bounds when route is loaded
   useEffect(() => {
     if (mapRef?.current && routeData.steps) {
       const allCoordinates: LatLngExpression[] = [];
@@ -70,40 +70,60 @@ export function RouteDisplay({
 
   return (
     <>
-      {/* Route lines and markers on map */}
       {routeData.steps.map((step, index) => (
         <RouteStepVisual key={index} step={step} index={index} />
       ))}
 
-      {/* Route details panel */}
       <div className="route-details-panel">
         <div className="route-details-header">
           <div className="route-header-content">
             <div className="route-type-badge">
               {routeData.metadata?.transfers === 0 ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 13l4 4L19 7"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 18V7.414a1 1 0 01.293-.707l2.414-2.414A1 1 0 0110.414 4H17a1 1 0 011 1v13M7 14h10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 18V7.414a1 1 0 01.293-.707l2.414-2.414A1 1 0 0110.414 4H17a1 1 0 011 1v13M7 14h10"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               )}
             </div>
             <div>
               <h3 className="route-title">{routeData.summary}</h3>
               <div className="route-subtitle">
-                {routeData.metadata?.transfers === 0 
-                  ? "Direct Route Available" 
-                  : `${routeData.metadata?.transfers} Transfer${routeData.metadata?.transfers > 1 ? 's' : ''} Required`
-                }
+                {routeData.metadata?.transfers === 0
+                  ? "Direct Route Available"
+                  : `${routeData.metadata?.transfers ?? 0} Transfer${(routeData.metadata?.transfers ?? 0) > 1 ? "s" : ""} Required`}
               </div>
             </div>
           </div>
-          <button className="close-button-enhanced" onClick={onClose}>
+          <button className="close-button-route" onClick={onClose}>
             <svg
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -118,12 +138,12 @@ export function RouteDisplay({
           </button>
         </div>
 
-        <div className="route-summary-enhanced">
+        <div className="route-summary-cards">
           <div className="summary-card">
             <div className="summary-icon time-icon">
               <svg
-                width="20"
-                height="20"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -146,8 +166,8 @@ export function RouteDisplay({
           <div className="summary-card">
             <div className="summary-icon distance-icon">
               <svg
-                width="20"
-                height="20"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -162,7 +182,9 @@ export function RouteDisplay({
               </svg>
             </div>
             <div>
-              <div className="summary-value">{routeData.total_distance.toFixed(1)}</div>
+              <div className="summary-value">
+                {routeData.total_distance.toFixed(1)}
+              </div>
               <div className="summary-label">Kilometers</div>
             </div>
           </div>
@@ -171,8 +193,8 @@ export function RouteDisplay({
             <div className="summary-card">
               <div className="summary-icon transfer-icon">
                 <svg
-                  width="20"
-                  height="20"
+                  width="22"
+                  height="22"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -186,13 +208,15 @@ export function RouteDisplay({
                 </svg>
               </div>
               <div>
-                <div className="summary-value">{routeData.metadata.transfers}</div>
+                <div className="summary-value">
+                  {routeData.metadata.transfers}
+                </div>
                 <div className="summary-label">
                   {routeData.metadata.transfers === 0
                     ? "Direct"
                     : routeData.metadata.transfers === 1
-                    ? "Transfer"
-                    : "Transfers"}
+                      ? "Transfer"
+                      : "Transfers"}
                 </div>
               </div>
             </div>
@@ -202,8 +226,8 @@ export function RouteDisplay({
         {routeData.metadata?.warning && (
           <div className="warning-message">
             <svg
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -229,16 +253,14 @@ export function RouteDisplay({
   );
 }
 
-// Component to render visual elements on map
-function RouteStepVisual({ step, index }: { step: RouteStep; index: number }) {
-  // Draw polyline for walk or bus segments
+function RouteStepVisual({ step }: { step: RouteStep; index: number }) {
   if (step.polyline && step.polyline.length > 0) {
     return (
       <Polyline
         positions={step.polyline}
         pathOptions={{
-          color: step.color || "#3B82F6",
-          weight: 4,
+          color: step.color || "#4338CA",
+          weight: 5,
           opacity: 0.8,
           dashArray: step.type === "walk" ? "10, 10" : undefined,
         }}
@@ -246,52 +268,24 @@ function RouteStepVisual({ step, index }: { step: RouteStep; index: number }) {
     );
   }
 
-  // Show marker for transfer or arrival points
-  if (step.location && (step.action === "transfer" || step.action === "arrive")) {
-    return (
-      <Marker position={step.location} icon={busStopIcon}>
-        <Popup>
-          <div>
-            <strong>{step.action === "transfer" ? "Transfer" : "Arrival"}</strong>
-            <br />
-            {step.at}
-            {step.action === "transfer" && step.to && (
-              <>
-                <br />
-                Change to {step.to}
-              </>
-            )}
-          </div>
-        </Popup>
-      </Marker>
-    );
-  }
-
-  // Show real-time bus positions
-  if (step.buses_available && step.buses_available.length > 0) {
-    return (
-      <>
-        {step.buses_available.map((bus, busIndex) => {
-          // Find the stop position from stops_between
-          // This is a simplified version - you might need to fetch actual coordinates
-          return null; // Would need stop coordinates to show bus position
-        })}
-      </>
-    );
+  if (
+    step.location &&
+    (step.action === "transfer" || step.action === "arrive")
+  ) {
+    return <Marker position={step.location} icon={busStopIcon} />;
   }
 
   return null;
 }
 
-// Component to render step details in the panel
-function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
+function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
   if (step.action === "walk") {
     return (
       <div className="route-step walk-step">
         <div className="step-icon">
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -321,14 +315,14 @@ function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
       <div className="route-step board-step">
         <div className="step-icon">
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M12 2C8 2 4 2.5 4 6v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2l2-2h4l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zm0 2c3.51 0 5.96.48 6.93 1.5H5.07C6.04 4.48 8.49 4 12 4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+              d="M12 2C8 2 4 2.5 4 6v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2l2-2h4l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4z"
               fill="#4338CA"
             />
           </svg>
@@ -351,8 +345,8 @@ function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
           style={{ backgroundColor: step.color, borderRadius: "50%" }}
         >
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -371,28 +365,6 @@ function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
             {step.duration && <div>{step.duration} minutes</div>}
             {step.distance && <div>{step.distance.toFixed(1)} km</div>}
           </div>
-          {step.stops_between && step.stops_between.length > 0 && (
-            <details className="stops-list">
-              <summary>View all stops</summary>
-              <ul>
-                {step.stops_between.map((stop, i) => (
-                  <li key={i}>{stop}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-          {step.buses_available && step.buses_available.length > 0 && (
-            <div className="buses-info">
-              <strong>Buses nearby:</strong>
-              {step.buses_available.map((bus, i) => (
-                <div key={i} className="bus-info">
-                  🚌 {bus.bus_number} - {bus.stops_away} stop
-                  {bus.stops_away !== 1 ? "s" : ""} away (ETA: {bus.eta_minutes}{" "}
-                  min)
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -403,8 +375,8 @@ function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
       <div className="route-step transfer-step">
         <div className="step-icon">
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -436,8 +408,8 @@ function RouteStepDetail({ step, index }: { step: RouteStep; index: number }) {
       <div className="route-step arrive-step">
         <div className="step-icon">
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"

@@ -1,64 +1,47 @@
-type Props = {
-  size?: number;
-};
 
-export function Spinner({ size = 100 }: Props) {
+interface SpinnerProps {
+  size?: "small" | "medium" | "large";
+  color?: "white" | "primary" | "gray";
+  className?: string;
+}
+
+export function Spinner({
+  size = "medium",
+  color = "white",
+  className = "",
+}: SpinnerProps) {
+  const sizeClass =
+    size === "small"
+      ? "spinner-small"
+      : size === "large"
+        ? "spinner-large"
+        : "spinner";
+  const colorClass = color === "primary" ? "spinner-primary" : "";
+
+  return <div className={`${sizeClass} ${colorClass} ${className}`} />;
+}
+
+interface LoadingProps {
+  text?: string;
+  size?: "small" | "medium" | "large";
+}
+
+export function Loading({
+  text = "Loading...",
+  size = "medium",
+}: LoadingProps) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width={size}>
-      <circle
-        fill="#3B82F6"
-        stroke="#3B82F6"
-        strokeWidth="15"
-        r="15"
-        cx="40"
-        cy="65"
-      >
-        <animate
-          attributeName="cy"
-          calcMode="spline"
-          dur="2"
-          values="65;135;65;"
-          keySplines=".5 0 .5 1;.5 0 .5 1"
-          repeatCount="indefinite"
-          begin="-.4"
-        />
-      </circle>
-      <circle
-        fill="#3B82F6"
-        stroke="#3B82F6"
-        strokeWidth="15"
-        r="15"
-        cx="100"
-        cy="65"
-      >
-        <animate
-          attributeName="cy"
-          calcMode="spline"
-          dur="2"
-          values="65;135;65;"
-          keySplines=".5 0 .5 1;.5 0 .5 1"
-          repeatCount="indefinite"
-          begin="-.2"
-        />
-      </circle>
-      <circle
-        fill="#3B82F6"
-        stroke="#3B82F6"
-        strokeWidth="15"
-        r="15"
-        cx="160"
-        cy="65"
-      >
-        <animate
-          attributeName="cy"
-          calcMode="spline"
-          dur="2"
-          values="65;135;65;"
-          keySplines=".5 0 .5 1;.5 0 .5 1"
-          repeatCount="indefinite"
-          begin="0"
-        />
-      </circle>
-    </svg>
+    <div className="loading-container">
+      <Spinner size={size} color="primary" />
+      {text && <span className="loading-text">{text}</span>}
+    </div>
   );
+}
+
+interface InlineSpinnerProps {
+  className?: string;
+}
+
+export function InlineSpinner({ className = "" }: InlineSpinnerProps) {
+  return <span className={`inline-spinner ${className}`} />;
 }

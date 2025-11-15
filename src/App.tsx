@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import "./App.css";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { LineMarkers } from "./components/LineMarkers.tsx";
 import { createClientApi } from "@cloudroutes/query";
 import { Env } from "./config/env.ts";
@@ -10,14 +11,11 @@ import Modal from "react-modal";
 import { useEffect, useRef, useState } from "react";
 import { Filters } from "./components/Filters.tsx";
 import { useDefaultLocation } from "@cloudroutes/query/lines";
-import { Spinner } from "./components/Spinner.tsx";
 import clsx from "clsx";
 import { userIcon } from "./icons.ts";
 import { useGlobalStore } from "./store";
 import { SearchBar } from "./components/SearchBar.tsx";
 import { RouteDisplay } from "./components/RouteDisplay.tsx";
-
-// TODO: fetch traccar urls from api
 
 createClientApi({
   baseURL: Env.API_URL,
@@ -26,6 +24,75 @@ createClientApi({
 initTraccarClient().catch((e) => console.error("ERROR:", e));
 
 const isLineDisabled = window?.env?.LINE_IS_DISABLED ?? false;
+
+// Professional Loading Component
+function LoadingScreen() {
+  return (
+    <div className="map-loading-overlay">
+      <div className="loading-content">
+        <div className="loading-icon-container">
+          <div className="loading-icon-circle">
+            <div className="loading-icon-inner">
+              <svg
+                width="44"
+                height="44"
+                viewBox="0 0 44 44"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22 10C28.25 10 32.5 11.5 32.5 13.25V14V15.5C33.3284 15.5 34 16.1716 34 17V20C34 20.8284 33.3284 21.5 32.5 21.5V29.25C32.5 30.0784 31.8284 30.75 31 30.75V32.25C31 33.0784 30.3284 33.75 29.5 33.75H28C27.1716 33.75 26.5 33.0784 26.5 32.25V30.75H17.5V32.25C17.5 33.0784 16.8284 33.75 16 33.75H14.5C13.6716 33.75 13 33.0784 13 32.25V30.75C12.1716 30.75 11.5 30.0784 11.5 29.25V21.5C10.6716 21.5 10 20.8284 10 20V17C10 16.1716 10.6716 15.5 11.5 15.5V14V13.25C11.5 11.5 15.75 10 22 10ZM14.5 17V21.5C14.5 22.3284 15.1716 23 16 23H20.75V15.5H16C15.1716 15.5 14.5 16.1716 14.5 17ZM23.25 23H28C28.8284 23 29.5 22.3284 29.5 21.5V17C29.5 16.1716 28.8284 15.5 28 15.5H23.25V23ZM16.625 28.75C17.039 28.75 17.4361 28.5854 17.7268 28.2947C18.0175 28.004 18.1821 27.6069 18.1821 27.1929C18.1821 26.7788 18.0175 26.3817 17.7268 26.091C17.4361 25.8004 17.039 25.6357 16.625 25.6357C16.211 25.6357 15.8139 25.8004 15.5232 26.091C15.2325 26.3817 15.0679 26.7788 15.0679 27.1929C15.0679 27.6069 15.2325 28.004 15.5232 28.2947C15.8139 28.5854 16.211 28.75 16.625 28.75ZM27.375 28.75C27.789 28.75 28.1861 28.5854 28.4768 28.2947C28.7675 28.004 28.9321 27.6069 28.9321 27.1929C28.9321 26.7788 28.7675 26.3817 28.4768 26.091C28.1861 25.8004 27.789 25.6357 27.375 25.6357C26.961 25.6357 26.5639 25.8004 26.2732 26.091C25.9825 26.3817 25.8179 26.7788 25.8179 27.1929C25.8179 27.6069 25.9825 28.004 26.2732 28.2947C26.5639 28.5854 26.961 28.75 27.375 28.75ZM26.5 13.25C26.5 12.8358 26.1642 12.5 25.75 12.5H18.25C17.8358 12.5 17.5 12.8358 17.5 13.25C17.5 13.6642 17.8358 14 18.25 14H25.75C26.1642 14 26.5 13.6642 26.5 13.25Z"
+                  fill="#4338CA"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div>
+          {/* <div className="loading-text">Loading Map</div> */}
+          <div className="loading-subtext">Preparing your route...</div>
+        </div>
+        <div className="loading-spinner"></div>
+        <div className="loading-progress-bar">
+          <div className="loading-progress-fill"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Zoom Control Component
+function ZoomControl() {
+  const map = useMap();
+
+  const handleZoomIn = () => {
+    map.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    map.zoomOut();
+  };
+
+  return (
+    <div className="zoom-controls">
+      <button
+        className="zoom-button"
+        onClick={handleZoomIn}
+        aria-label="Zoom in"
+      >
+        +
+      </button>
+      <div className="zoom-divider" />
+      <button
+        className="zoom-button"
+        onClick={handleZoomOut}
+        aria-label="Zoom out"
+      >
+        −
+      </button>
+    </div>
+  );
+}
 
 function App() {
   const {
@@ -36,7 +103,6 @@ function App() {
   } = useDefaultLocation();
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [displayLocation, setDisplayLocation] = useState(false);
   const [routeData, setRouteData] = useState<any>(null);
@@ -70,19 +136,15 @@ function App() {
 
   const handleRouteFound = (data: any) => {
     setRouteData(data);
-    setIsSearchOpen(false);
   };
 
   const handleClearRoute = () => {
     setRouteData(null);
   };
 
-  if (isLoading || isRefetching)
-    return (
-      <div className="center min-h-screen">
-        <Spinner />
-      </div>
-    );
+  if (isLoading || isRefetching) {
+    return <LoadingScreen />;
+  }
 
   if (!defaultLocation)
     return (
@@ -102,6 +164,7 @@ function App() {
         center={[defaultLocation.latitude, defaultLocation.longitude]}
         zoom={15}
         scrollWheelZoom
+        zoomControl={false}
       >
         <TileLayer url={leafletProvider.url} />
         {!isLineDisabled && <LineMarkers />}
@@ -118,134 +181,81 @@ function App() {
           />
         )}
 
-        {/* Filters button */}
-        <button
-          className="button button-square filters-menu"
-          onClick={() => setIsFiltersOpen(true)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 -960 960 960"
-            width="20px"
-            height="20px"
-            fill="#1f1f1f"
-          >
-            <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
-          </svg>
-        </button>
+        {/* Zoom Control */}
+        <ZoomControl />
 
-        {/* Location button */}
-        {!!window.env && (
-          <>
+        {/* Map Controls */}
+        <div className="map-controls">
+          {/* Filters button */}
+          <button
+            className="control-button"
+            onClick={() => setIsFiltersOpen(true)}
+            aria-label="Filters"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 -960 960 960"
+              width="24px"
+              height="24px"
+              fill="#4338ca"
+            >
+              <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
+            </svg>
+          </button>
+
+          {/* Location button */}
+          {!!window.env && (
             <button
-              className={clsx("button button-square location-button", {
+              className={clsx("control-button", {
                 active: displayLocation,
               })}
               onClick={getLocation}
+              aria-label="My location"
             >
               <svg
-                id="Location_Off_24"
-                width="20"
-                height="20"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect
-                  width="24"
-                  height="24"
-                  stroke="none"
-                  fill="#000000"
-                  opacity="0"
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8"
+                  stroke="#4338ca"
+                  strokeWidth="2"
+                  fill="none"
                 />
-                <g transform="matrix(0.4 0 0 0.4 12 12)">
-                  <path
-                    stroke="none"
-                    strokeWidth={1}
-                    strokeDasharray="none"
-                    strokeDashoffset={0}
-                    strokeLinejoin="miter"
-                    strokeMiterlimit={4}
-                    fillRule="nonzero"
-                    opacity={1}
-                    transform="translate(-25, -25)"
-                    d="M 23 0 L 23 4.0957031 C 13.018702 5.0446992 5.046896 13.018494 4.0976562 23 L 0 23 L 0 27 L 4.0976562 27 C 5.046896 36.981506 13.018702 44.955301 23 45.904297 L 23 50 L 27 50 L 27 45.902344 C 36.981223 44.953131 44.953131 36.981223 45.902344 27 L 50 27 L 50 23 L 45.902344 23 C 44.953131 13.018777 36.981223 5.046869 27 4.0976562 L 27 0 L 23 0 z M 27 8.1269531 C 34.805997 9.0369175 40.963083 15.194003 41.873047 23 L 39 23 L 39 27 L 41.873047 27 C 40.963083 34.805997 34.805997 40.963083 27 41.873047 L 27 39 L 23 39 L 23 41.871094 C 15.196372 40.959902 9.0368425 34.805354 8.1269531 27 L 11 27 L 11 23 L 8.1269531 23 C 9.0368425 15.194646 15.196372 9.0400983 23 8.1289062 L 23 11 L 27 11 L 27 8.1269531 z M 20.978516 18.980469 C 20.165025870540457 18.981476654703446 19.43318106808401 19.47506340456152 19.127438916168853 20.228912820982597 C 18.821696764253694 20.98276223740367 19.002969696841884 21.84668631880715 19.585938 22.414062 L 22.171875 25 L 19.585938 27.585938 C 19.063456410414243 28.087571146274303 18.8529867299941 28.832471984436292 19.03570037803193 29.533356103044937 C 19.218414026069762 30.234240221653586 19.765759778346414 30.78158597393024 20.466643896955063 30.96429962196807 C 21.16752801556371 31.1470132700059 21.912428853725697 30.936543589585757 22.414062 30.414062 L 25 27.828125 L 27.585938 30.414062 C 28.087571146274303 30.936543589585757 28.83247198443629 31.1470132700059 29.533356103044937 30.96429962196807 C 30.234240221653586 30.781585973930238 30.781585973930238 30.234240221653586 30.96429962196807 29.533356103044937 C 31.1470132700059 28.83247198443629 30.936543589585757 28.087571146274303 30.414062 27.585938 L 27.828125 25 L 30.414062 22.414062 C 31.0055823092363 21.839079220204013 31.183438764082922 20.959930425547107 30.861930489808206 20.200237130279984 C 30.54042221553349 19.44054383501286 29.78550466133776 18.95615245601811 28.960938 18.980469 C 28.44134072383389 18.995951324653216 27.948181176214312 19.213109737844256 27.585938 19.585938 L 25 22.171875 L 22.414062 19.585938 C 22.037047603547457 19.19838649972553 21.519196843485222 18.979973030673253 20.978516 18.980469 z"
-                    strokeLinecap="round"
-                  />
-                </g>
+                <circle cx="12" cy="12" r="3" fill="#4338ca" />
               </svg>
             </button>
+          )}
+        </div>
 
-            {displayLocation && location && (
-              <Marker position={location} title="Me" icon={userIcon()} />
-            )}
-          </>
+        {/* User location marker */}
+        {displayLocation && location && (
+          <Marker position={location} title="Me" icon={userIcon()} />
         )}
-
-        {/* Search button */}
-        <button
-          className="button button-square search-button"
-          onClick={() => setIsSearchOpen(true)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="20px"
-            height="20px"
-            fill="#1f1f1f"
-          >
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-          </svg>
-        </button>
-
-        {/* Search modal */}
-        <Modal
-          isOpen={isSearchOpen}
-          onRequestClose={() => setIsSearchOpen(false)}
-          style={{
-            content: {
-              bottom: "0",
-              left: "50%",
-              right: "auto",
-              top: "auto",
-              transform: "translateX(-50%)",
-              width: "90%",
-              maxWidth: "500px",
-              borderRadius: "16px 16px 0 0",
-              padding: "20px",
-            },
-            overlay: { zIndex: 99999 },
-          }}
-        >
-          <SearchBar
-            onRouteFound={handleRouteFound}
-            onClearRoute={handleClearRoute}
-            currentLocation={location}
-            onClose={() => setIsSearchOpen(false)}
-          />
-        </Modal>
 
         {/* Filters modal */}
         <Modal
           isOpen={isFiltersOpen}
           onRequestClose={() => setIsFiltersOpen(false)}
-          style={{
-            content: {
-              bottom: "0",
-              left: "50%",
-              right: "auto",
-              top: "auto",
-              transform: "translateX(-50%)",
-              width: "90%",
-              maxWidth: "500px",
-              borderRadius: "16px 16px 0 0",
-              padding: "20px",
-            },
-            overlay: { zIndex: 99999 },
-          }}
+          className="ReactModal__Content"
+          overlayClassName="ReactModal__Overlay"
+          closeTimeoutMS={300}
         >
           <Filters onApply={() => setIsFiltersOpen(false)} />
         </Modal>
       </MapContainer>
+
+      {/* Search Bar - Fixed at top */}
+      <SearchBar
+        onRouteFound={handleRouteFound}
+        onClearRoute={handleClearRoute}
+        currentLocation={location}
+      />
     </>
   );
 }
