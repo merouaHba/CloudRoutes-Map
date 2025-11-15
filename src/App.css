@@ -1,0 +1,54 @@
+#map {
+  height: 100vh;
+}
+
+.bus-name {
+  color: #525252;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 500;
+  width: 150px;
+  transform: translateX(calc(-50% + 19px));
+  transform-origin: center;
+}
+
+.filters-menu,
+.location-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.location-button {
+  top: 62px;
+}
+
+.location-button {
+  position: absolute;
+  top: 62px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.bus-direction {
+  position: relative;
+  transform: rotate(var(--angle, 0));
+  transition: transform 600ms ease-in-out;
+}
+
+.bus-angle {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid #9CA3AF;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-60%);
+}
+
+.bus-icon {
+  transition: transform 600ms ease-in-out;
+}
