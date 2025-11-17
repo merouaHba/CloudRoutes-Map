@@ -3,6 +3,7 @@ import { Polyline, Marker } from "react-leaflet";
 import { LatLngExpression } from "leaflet";
 import { busStopIcon } from "../icons";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 type RouteStep = {
   action: string;
@@ -48,6 +49,9 @@ export function RouteDisplay({
   onClose,
   mapRef,
 }: RouteDisplayProps) {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
+
   useEffect(() => {
     if (mapRef?.current && routeData.steps) {
       const allCoordinates: LatLngExpression[] = [];
@@ -68,13 +72,20 @@ export function RouteDisplay({
     }
   }, [routeData, mapRef]);
 
+  const getTransferText = () => {
+    const transfers = routeData.metadata?.transfers ?? 0;
+    if (transfers === 0) return t('route.direct_route');
+    if (transfers === 1) return `1 ${t('route.transfer')} ${t('route.transfer_required')}`;
+    return `${transfers} ${t('route.transfers')} ${t('route.transfers_required')}`;
+  };
+
   return (
     <>
       {routeData.steps.map((step, index) => (
         <RouteStepVisual key={index} step={step} index={index} />
       ))}
 
-      <div className="route-details-panel">
+      <div className={`route-details-panel ${isRTL ? 'rtl' : ''}`}>
         <div className="route-details-header">
           <div className="route-header-content">
             <div className="route-type-badge">
@@ -114,9 +125,7 @@ export function RouteDisplay({
             <div>
               <h3 className="route-title">{routeData.summary}</h3>
               <div className="route-subtitle">
-                {routeData.metadata?.transfers === 0
-                  ? "Direct Route Available"
-                  : `${routeData.metadata?.transfers ?? 0} Transfer${(routeData.metadata?.transfers ?? 0) > 1 ? "s" : ""} Required`}
+                {getTransferText()}
               </div>
             </div>
           </div>
@@ -159,7 +168,7 @@ export function RouteDisplay({
             </div>
             <div>
               <div className="summary-value">{routeData.total_time}</div>
-              <div className="summary-label">Minutes</div>
+              <div className="summary-label">{t('route.minutes')}</div>
             </div>
           </div>
 
@@ -185,7 +194,7 @@ export function RouteDisplay({
               <div className="summary-value">
                 {routeData.total_distance.toFixed(1)}
               </div>
-              <div className="summary-label">Kilometers</div>
+              <div className="summary-label">{t('route.kilometers')}</div>
             </div>
           </div>
 
@@ -213,10 +222,10 @@ export function RouteDisplay({
                 </div>
                 <div className="summary-label">
                   {routeData.metadata.transfers === 0
-                    ? "Direct"
+                    ? t('route.direct')
                     : routeData.metadata.transfers === 1
-                      ? "Transfer"
-                      : "Transfers"}
+                      ? t('route.transfer')
+                      : t('route.transfers')}
                 </div>
               </div>
             </div>
@@ -279,6 +288,8 @@ function RouteStepVisual({ step }: { step: RouteStep; index: number }) {
 }
 
 function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
+  const { t } = useTranslation();
+
   if (step.action === "walk") {
     return (
       <div className="route-step walk-step">
@@ -298,12 +309,12 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
         </div>
         <div className="step-content">
           <div className="step-title">
-            Walk {step.distance ? `${step.distance.toFixed(2)} km` : ""}
+            {t('route.walk')} {step.distance ? `${step.distance.toFixed(2)} ${t('nearby.km')}` : ""}
           </div>
           <div className="step-details">
-            {step.from && <div>From: {step.from}</div>}
-            {step.to && <div>To: {step.to}</div>}
-            {step.duration && <div>{step.duration} minutes</div>}
+            {step.from && <div>{t('route.from')}: {step.from}</div>}
+            {step.to && <div>{t('route.to')}: {step.to}</div>}
+            {step.duration && <div>{step.duration} {t('route.minutes').toLowerCase()}</div>}
           </div>
         </div>
       </div>
@@ -329,9 +340,9 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
         </div>
         <div className="step-content">
           <div className="step-title" style={{ color: step.color }}>
-            Board {step.line}
+            {t('route.board')} {step.line}
           </div>
-          <div className="step-details">At: {step.at}</div>
+          <div className="step-details">{t('route.at')}: {step.at}</div>
         </div>
       </div>
     );
@@ -359,11 +370,11 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
         </div>
         <div className="step-content">
           <div className="step-title" style={{ color: step.color }}>
-            Ride {step.line} ({step.stops} stops)
+            {t('route.ride')} {step.line} ({step.stops} {t('route.stops')})
           </div>
           <div className="step-details">
-            {step.duration && <div>{step.duration} minutes</div>}
-            {step.distance && <div>{step.distance.toFixed(1)} km</div>}
+            {step.duration && <div>{step.duration} {t('route.minutes').toLowerCase()}</div>}
+            {step.distance && <div>{step.distance.toFixed(1)} {t('nearby.km')}</div>}
           </div>
         </div>
       </div>
@@ -392,11 +403,11 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
         </div>
         <div className="step-content">
           <div className="step-title" style={{ color: "#f59e0b" }}>
-            Transfer
+            {t('route.transfer_at')}
           </div>
           <div className="step-details">
-            <div>At: {step.at}</div>
-            <div>Change to: {step.to}</div>
+            <div>{t('route.at')}: {step.at}</div>
+            <div>{t('route.change_to')}: {step.to}</div>
           </div>
         </div>
       </div>
@@ -423,7 +434,7 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
         </div>
         <div className="step-content">
           <div className="step-title" style={{ color: "#10b981" }}>
-            Arrive at destination
+            {t('route.arrive')}
           </div>
           <div className="step-details">{step.at}</div>
         </div>

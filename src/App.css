@@ -1750,3 +1750,471 @@
 .route-details-panel::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
+
+/* ============================================
+   RTL SUPPORT
+   ============================================ */
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .search-bar-container {
+  left: auto;
+  right: 20px;
+}
+
+[dir="rtl"] .map-controls {
+  left: 20px;
+  right: auto;
+}
+
+[dir="rtl"] .zoom-controls {
+  left: 20px;
+  right: auto;
+}
+
+[dir="rtl"] .search-bar-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .search-label {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .popup-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .popup-info-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .route-header-content {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .route-title-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nearby-stops-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nearby-stop-item {
+  flex-direction: row-reverse;
+}
+
+/* ============================================
+   NEARBY STOPS STYLING
+   ============================================ */
+
+.nearby-stops-list {
+  margin: 12px 0;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #86efac;
+  border-radius: 16px;
+  padding: 12px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.nearby-stops-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gray-700);
+  margin-bottom: 10px;
+}
+
+.nearby-stops-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nearby-stop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: white;
+  border: 2px solid #86efac;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.nearby-stop-item:active {
+  transform: scale(0.98);
+  background: #f0fdf4;
+  border-color: #4ade80;
+}
+
+.nearby-stop-info {
+  flex: 1;
+}
+
+.nearby-stop-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.nearby-stop-distance {
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.3;
+}
+
+[dir="rtl"] .nearby-stop-item {
+  text-align: right;
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS (Enhanced)
+   ============================================ */
+
+@media (max-width: 768px) {
+
+  /* Search Bar */
+  .search-bar-container {
+    left: 12px;
+    right: 76px;
+    top: 12px;
+  }
+
+  [dir="rtl"] .search-bar-container {
+    right: 12px;
+    left: 76px;
+  }
+
+  .search-bar-toggle {
+    padding: 10px 14px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .search-bar-header {
+    padding: 12px 14px;
+  }
+
+  .search-bar-title {
+    font-size: 16px;
+  }
+
+  .search-bar-body {
+    padding: 12px 14px;
+  }
+
+  .search-input-group {
+    margin-bottom: 10px;
+  }
+
+  /* Map Controls */
+  .map-controls {
+    right: 12px;
+    top: 12px;
+    gap: 8px;
+  }
+
+  [dir="rtl"] .map-controls {
+    left: 12px;
+    right: auto;
+  }
+
+  .control-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Zoom Controls */
+  .zoom-controls {
+    bottom: 100px;
+    right: 12px;
+  }
+
+  [dir="rtl"] .zoom-controls {
+    left: 12px;
+    right: auto;
+  }
+
+  .zoom-button {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  /* Route Details Panel */
+  .route-details-panel {
+    max-height: 60vh;
+  }
+
+  .route-details-header {
+    padding: 16px 14px;
+  }
+
+  .route-type-badge {
+    width: 44px;
+    height: 44px;
+  }
+
+  .route-title {
+    font-size: 16px;
+  }
+
+  .route-subtitle {
+    font-size: 13px;
+  }
+
+  .route-summary-cards {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .summary-card {
+    padding: 14px 8px;
+  }
+
+  .summary-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .summary-value {
+    font-size: 20px;
+  }
+
+  .summary-label {
+    font-size: 10px;
+  }
+
+  /* Route Steps */
+  .route-steps {
+    padding: 14px;
+  }
+
+  .route-step {
+    padding: 10px 0;
+  }
+
+  .step-icon {
+    width: 28px;
+    height: 28px;
+    left: -15px;
+  }
+
+  .step-title {
+    font-size: 14px;
+  }
+
+  .step-details {
+    font-size: 12px;
+  }
+
+  /* Nearby Stops Mobile */
+  .nearby-stops-list {
+    margin: 10px 0;
+    padding: 10px;
+  }
+
+  .nearby-stops-header {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .nearby-stop-item {
+    padding: 8px 10px;
+  }
+
+  .nearby-stop-name {
+    font-size: 12px;
+  }
+
+  .nearby-stop-distance {
+    font-size: 10px;
+  }
+
+  /* Popup Mobile */
+  .popup-header {
+    padding: 10px 12px;
+  }
+
+  .popup-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .popup-title {
+    font-size: 13px;
+  }
+
+  .popup-body {
+    padding: 10px 12px;
+  }
+
+  .popup-info-row {
+    padding: 6px 0;
+    font-size: 12px;
+  }
+
+  .popup-actions {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .popup-button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* Extra small mobile adjustments */
+  .search-bar-container {
+    left: 10px;
+    right: 70px;
+    top: 10px;
+  }
+
+  [dir="rtl"] .search-bar-container {
+    right: 10px;
+    left: 70px;
+  }
+
+  .search-bar-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .control-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .route-summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .summary-card {
+    padding: 10px 6px;
+  }
+
+  .summary-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .summary-value {
+    font-size: 18px;
+  }
+
+  .summary-label {
+    font-size: 9px;
+  }
+}
+
+/* ============================================
+   TOUCH IMPROVEMENTS
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+
+  /* Increase touch target sizes on touch devices */
+  .control-button,
+  .zoom-button,
+  .search-bar-close,
+  .modal-close-btn,
+  .swap-button,
+  .search-swap-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Remove hover states on touch devices */
+  .control-button:hover,
+  .zoom-button:hover,
+  .nearby-stop-item:hover {
+    transform: none;
+  }
+
+  /* Enhance active states for better touch feedback */
+  .control-button:active,
+  .zoom-button:active,
+  .nearby-stop-item:active,
+  .popup-button:active,
+  .search-btn-primary:active,
+  .search-btn-secondary:active {
+    transform: scale(0.95);
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Focus visible for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+
+  .map-controls,
+  .zoom-controls,
+  .search-bar-container,
+  .control-button {
+    display: none !important;
+  }
+
+  .route-details-panel {
+    position: static;
+    max-height: none;
+    box-shadow: none;
+  }
+}

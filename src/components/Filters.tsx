@@ -4,12 +4,15 @@ import { useFilters } from "../hooks/use-filters.ts";
 import { useMapLinesOption } from "../hooks/use-map-lines-name.ts";
 import { useGlobalStore } from "../store";
 import { LEAFLET_PROVIDERS } from "../constants";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   onApply?: VoidFunction;
 };
 
 export function Filters({ onApply }: Props) {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
   const { selectedFilters, handleChange, handleApply } = useFilters();
   const lines = useMapLinesOption();
   const currentLeafletProvider = useGlobalStore(
@@ -35,9 +38,12 @@ export function Filters({ onApply }: Props) {
       transition: "all 0.2s",
       fontSize: "14px",
       cursor: "pointer",
+      direction: isRTL ? "rtl" : "ltr",
     }),
     option: (provided: any, state: any) => ({
       ...provided,
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       backgroundColor: state.isSelected
         ? "#4338ca"
         : state.isFocused
@@ -51,12 +57,16 @@ export function Filters({ onApply }: Props) {
     }),
     singleValue: (provided: any) => ({
       ...provided,
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       color: "#1f2937",
       fontWeight: "500",
       fontSize: "14px",
     }),
     placeholder: (provided: any) => ({
       ...provided,
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       color: "#9ca3af",
       fontSize: "14px",
     }),
@@ -75,8 +85,20 @@ export function Filters({ onApply }: Props) {
     }),
   };
 
+  const stopFilters = [
+    { value: "all", label: t("filters.all") },
+    { value: "none", label: t("filters.none") },
+    { value: "line-only", label: t("filters.line_only") },
+  ];
+
+  const busFilters = [
+    { value: "all", label: t("filters.all") },
+    { value: "none", label: t("filters.none") },
+    { value: "line-only", label: t("filters.line_only") },
+  ];
+
   return (
-    <div>
+    <div className={isRTL ? "rtl" : ""}>
       {/* Modal Header */}
       <div className="modal-header">
         <div className="modal-drag-handle"></div>
@@ -92,11 +114,11 @@ export function Filters({ onApply }: Props) {
               <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
             </svg>
           </div>
-          <h2 className="modal-title">Filters</h2>
+          <h2 className="modal-title">{t("filters.title")}</h2>
           <button
             className="modal-close-btn"
             onClick={onApply}
-            aria-label="Close"
+            aria-label={t("filters.close")}
           >
             <svg
               width="18"
@@ -145,7 +167,7 @@ export function Filters({ onApply }: Props) {
                 </g>
               </svg>
             </div>
-            <span>Lines</span>
+            <span>{t("filters.lines")}</span>
           </div>
           <Select
             isMulti
@@ -179,7 +201,7 @@ export function Filters({ onApply }: Props) {
                 />
               </svg>
             </div>
-            <span>Stops</span>
+            <span>{t("filters.stops")}</span>
           </div>
           <Select
             options={stopFilters}
@@ -211,7 +233,7 @@ export function Filters({ onApply }: Props) {
                 <path d="M288 0C422.4 0 512 35.2 512 80l0 16 0 32c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32l0 160c0 17.7-14.3 32-32 32l0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32-192 0 0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32c-17.7 0-32-14.3-32-32l0-160c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32c0 0 0 0 0 0l0-32s0 0 0 0l0-16C64 35.2 153.6 0 288 0z" />
               </svg>
             </div>
-            <span>Buses</span>
+            <span>{t("filters.buses")}</span>
           </div>
           <Select
             options={busFilters}
@@ -243,7 +265,7 @@ export function Filters({ onApply }: Props) {
                 <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z" />
               </svg>
             </div>
-            <span>Map Layer</span>
+            <span>{t("filters.map_layer")}</span>
           </div>
           <Select
             options={LEAFLET_PROVIDERS.map((provider) => ({
@@ -290,21 +312,9 @@ export function Filters({ onApply }: Props) {
               strokeLinejoin="round"
             />
           </svg>
-          <span>Apply Filters</span>
+          <span>{t("filters.apply")}</span>
         </button>
       </div>
     </div>
   );
 }
-
-const stopFilters = [
-  { value: "all", label: "All" },
-  { value: "none", label: "None" },
-  { value: "line-only", label: "Line Only" },
-];
-
-const busFilters = [
-  { value: "all", label: "All" },
-  { value: "none", label: "None" },
-  { value: "line-only", label: "Line Only" },
-];

@@ -6,6 +6,7 @@ import { Marker, Popup } from "react-leaflet";
 import { useFilterStore } from "../hooks/use-filter-store.ts";
 import { MapFilters } from "../types.ts";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 type StopMarker = {
   id: number;
@@ -14,13 +15,24 @@ type StopMarker = {
   lines: string[];
 };
 
-function BusStopPopupContent({ stop }: { stop: StopMarker }) {
+function BusStopPopupContent({
+  stop,
+  onSetAsStart,
+  onSetAsDestination,
+}: {
+  stop: StopMarker;
+  onSetAsStart?: () => void;
+  onSetAsDestination?: () => void;
+}) {
+  const { t } = useTranslation();
   const [isLoadingRoute, setIsLoadingRoute] = React.useState(false);
   const [isLoadingTimes, setIsLoadingTimes] = React.useState(false);
 
   const handleRouteClick = () => {
     setIsLoadingRoute(true);
-    // Your route logic here
+    if (onSetAsDestination) {
+      onSetAsDestination();
+    }
     setTimeout(() => setIsLoadingRoute(false), 1000);
   };
 
@@ -67,7 +79,7 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
             />
           </svg>
           <div>
-            <span className="popup-info-label">Lines:</span>{" "}
+            <span className="popup-info-label">{t("bus_stop.lines")}:</span>{" "}
             {stop.lines.join(", ")}
           </div>
         </div>
@@ -86,7 +98,8 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
             />
           </svg>
           <div>
-            <span className="popup-info-label">Type:</span> Bus Stop
+            <span className="popup-info-label">{t("bus_stop.type")}:</span>{" "}
+            {t("bus_stop.title")}
           </div>
         </div>
       </div>
@@ -99,7 +112,7 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
           {isLoadingRoute ? (
             <>
               <div className="spinner-small"></div>
-              <span>Loading...</span>
+              <span>{t("bus_stop.loading")}</span>
             </>
           ) : (
             <>
@@ -125,7 +138,7 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
                   strokeWidth="2"
                 />
               </svg>
-              <span>Route</span>
+              <span>{t("bus_stop.view_route")}</span>
             </>
           )}
         </button>
@@ -143,7 +156,7 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
                   borderTopColor: "#4338ca",
                 }}
               ></div>
-              <span>Loading...</span>
+              <span>{t("bus_stop.loading")}</span>
             </>
           ) : (
             <>
@@ -168,7 +181,7 @@ function BusStopPopupContent({ stop }: { stop: StopMarker }) {
                   strokeLinecap="round"
                 />
               </svg>
-              <span>Times</span>
+              <span>{t("bus_stop.view_times")}</span>
             </>
           )}
         </button>

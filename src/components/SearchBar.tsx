@@ -5,6 +5,7 @@ import { useStops } from "@cloudroutes/query/lines";
 import { QUERY_KEYS } from "@cloudroutes/query";
 import axios from "axios";
 import { Env } from "../config/env";
+import { useTranslation } from "react-i18next";
 
 type StopOption = {
   value: string;
@@ -24,12 +25,18 @@ export function SearchBar({
   onClearRoute,
   currentLocation,
 }: SearchBarProps) {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [startStop, setStartStop] = useState<StopOption | null>(null);
   const [endStop, setEndStop] = useState<StopOption | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
+  const [showNearbyStops, setShowNearbyStops] = useState(false);
+  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [loadingNearby, setLoadingNearby] = useState(false);
 
   const { data: stops } = useStops<StopOption[]>({
     queryKey: [QUERY_KEYS.STOPS],
@@ -45,16 +52,39 @@ export function SearchBar({
 
   const stopOptions = stops || [];
 
+  const fetchNearbyStops = async () => {
+    if (!currentLocation) return;
+
+    setLoadingNearby(true);
+    try {
+      const response = await axios.post(`${Env.API_URL}/find-nearest-stop`, {
+        lat: currentLocation[0],
+        lng: currentLocation[1],
+        max_distance: 1.5,
+        include_polyline: false,
+      });
+
+      if (response.data.success && response.data.stops) {
+        setNearbyStops(response.data.stops);
+        setShowNearbyStops(true);
+      }
+    } catch (err) {
+      console.error("Error fetching nearby stops:", err);
+    } finally {
+      setLoadingNearby(false);
+    }
+  };
+
   const handleSearch = async () => {
     setError(null);
 
     if (!useCurrentLocation && !startStop) {
-      setError("Please select a starting point");
+      setError(t("search.select_starting_point"));
       return;
     }
 
     if (!endStop) {
-      setError("Please select a destination");
+      setError(t("search.select_destination_point"));
       return;
     }
 
@@ -83,15 +113,16 @@ export function SearchBar({
       if (routeData && routeData.success) {
         onRouteFound(routeData);
         setIsExpanded(false);
+        setShowNearbyStops(false);
       } else {
-        setError(routeData?.message || "No route found");
+        setError(routeData?.message || t("search.no_route_found"));
       }
     } catch (err: any) {
       console.error("Search error:", err);
       setError(
         err.response?.data?.message ||
           err.response?.data?.error ||
-          "Failed to find route"
+          t("search.failed_to_find_route")
       );
     } finally {
       setIsSearching(false);
@@ -103,6 +134,8 @@ export function SearchBar({
     setEndStop(null);
     setUseCurrentLocation(false);
     setError(null);
+    setShowNearbyStops(false);
+    setNearbyStops([]);
     onClearRoute();
   };
 
@@ -118,68 +151,71 @@ export function SearchBar({
       borderRadius: "12px",
       borderColor: state.isFocused ? "#4338ca" : "#e5e7eb",
       borderWidth: "2px",
-      minHeight: "44px",
+      minHeight: "48px",
       boxShadow: state.isFocused ? "0 0 0 3px rgba(67, 56, 202, 0.1)" : "none",
       transition: "all 0.2s",
       fontSize: "14px",
       cursor: "pointer",
       background: "white",
+      direction: isRTL ? "rtl" : "ltr",
     }),
     option: (provided: any, state: any) => ({
       ...provided,
-      textAlign: "right",
-      direction: "rtl",
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       backgroundColor: state.isSelected
         ? "#4338ca"
         : state.isFocused
           ? "#eef2ff"
           : "white",
       color: state.isSelected ? "white" : "#1f2937",
-      padding: "10px 12px",
+      padding: "12px 14px",
       cursor: "pointer",
       fontWeight: state.isSelected ? "600" : "400",
       transition: "all 0.15s",
-      fontSize: "13px",
+      fontSize: "14px",
     }),
     singleValue: (provided: any) => ({
       ...provided,
-      textAlign: "right",
-      direction: "rtl",
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       color: "#1f2937",
       fontWeight: "500",
-      fontSize: "13px",
+      fontSize: "14px",
     }),
     placeholder: (provided: any) => ({
       ...provided,
-      textAlign: "right",
-      direction: "rtl",
+      textAlign: isRTL ? "right" : "left",
+      direction: isRTL ? "rtl" : "ltr",
       color: "#9ca3af",
-      fontSize: "13px",
+      fontSize: "14px",
     }),
     menu: (provided: any) => ({
       ...provided,
       borderRadius: "12px",
       overflow: "hidden",
       boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15)",
-      marginTop: "6px",
+      marginTop: "8px",
       border: "2px solid #e5e7eb",
       zIndex: 10000,
     }),
     menuList: (provided: any) => ({
       ...provided,
-      padding: "4px",
-      maxHeight: "200px",
+      padding: "6px",
+      maxHeight: "220px",
     }),
   };
 
   return (
-    <div className={`search-bar-container ${isExpanded ? "expanded" : ""}`}>
-      {/* Collapsed State - Search Button */}
+    <div
+      className={`search-bar-container ${isExpanded ? "expanded" : ""} ${isRTL ? "rtl" : ""}`}
+    >
+      {/* Collapsed State */}
       {!isExpanded && (
         <button
           className="search-bar-toggle"
           onClick={() => setIsExpanded(true)}
-          aria-label="Open search"
+          aria-label={t("search.search_route")}
         >
           <svg
             width="20"
@@ -193,19 +229,22 @@ export function SearchBar({
               fill="white"
             />
           </svg>
-          <span>Search Route</span>
+          <span>{t("search.search_route")}</span>
         </button>
       )}
 
-      {/* Expanded State - Search Form */}
+      {/* Expanded State */}
       {isExpanded && (
         <div className="search-bar-content">
           <div className="search-bar-header">
-            <h3 className="search-bar-title">Find Route</h3>
+            <h3 className="search-bar-title">{t("search.title")}</h3>
             <button
               className="search-bar-close"
-              onClick={() => setIsExpanded(false)}
-              aria-label="Close search"
+              onClick={() => {
+                setIsExpanded(false);
+                setShowNearbyStops(false);
+              }}
+              aria-label={t("filters.close")}
             >
               <svg
                 width="18"
@@ -236,6 +275,10 @@ export function SearchBar({
                       setUseCurrentLocation(e.target.checked);
                       if (e.target.checked) {
                         setStartStop(null);
+                        fetchNearbyStops();
+                      } else {
+                        setShowNearbyStops(false);
+                        setNearbyStops([]);
                       }
                     }}
                   />
@@ -256,12 +299,66 @@ export function SearchBar({
                     />
                     <circle cx="12" cy="12" r="3" fill="currentColor" />
                   </svg>
-                  <span>Use current location</span>
+                  <span>{t("search.use_current_location")}</span>
                 </label>
               </div>
             )}
 
-            {/* From */}
+            {/* Nearby Stops */}
+            {showNearbyStops && nearbyStops.length > 0 && (
+              <div className="nearby-stops-list">
+                <div className="nearby-stops-header">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                      fill="#10b981"
+                    />
+                    <circle cx="12" cy="9" r="2.5" fill="white" />
+                  </svg>
+                  <span>{t("search.nearby_stops")}</span>
+                </div>
+                <div className="nearby-stops-items">
+                  {nearbyStops.slice(0, 3).map((stop, index) => (
+                    <button
+                      key={index}
+                      className="nearby-stop-item"
+                      onClick={() => {
+                        setStartStop({
+                          value: stop.name,
+                          label: stop.name,
+                          lat: stop.lat,
+                          lng: stop.lng,
+                        });
+                        setShowNearbyStops(false);
+                      }}
+                    >
+                      <div className="nearby-stop-info">
+                        <div className="nearby-stop-name">{stop.name}</div>
+                        <div className="nearby-stop-distance">
+                          {stop.walk_distance.toFixed(2)} {t("nearby.km")} •{" "}
+                          {stop.walk_time} {t("nearby.walk_time")}
+                        </div>
+                      </div>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <path
+                          d="M9 18l6-6-6-6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* From Input */}
             {!useCurrentLocation && (
               <div className="search-input-group">
                 <label className="search-label">
@@ -281,17 +378,17 @@ export function SearchBar({
                     />
                     <circle cx="12" cy="12" r="3" fill="currentColor" />
                   </svg>
-                  <span>From</span>
+                  <span>{t("search.from")}</span>
                 </label>
                 <Select
                   options={stopOptions}
                   value={startStop}
                   onChange={(newValue) => setStartStop(newValue)}
-                  placeholder="Select start..."
+                  placeholder={t("search.select_start")}
                   styles={customSelectStyles}
                   isSearchable
                   isClearable
-                  noOptionsMessage={() => "No stops found"}
+                  noOptionsMessage={() => t("search.no_stops_found")}
                 />
               </div>
             )}
@@ -302,7 +399,7 @@ export function SearchBar({
                 <button
                   className="search-swap-btn"
                   onClick={handleSwapStops}
-                  aria-label="Swap locations"
+                  aria-label={t("search.swap_locations")}
                 >
                   <svg
                     width="16"
@@ -330,7 +427,7 @@ export function SearchBar({
               </div>
             )}
 
-            {/* To */}
+            {/* To Input */}
             <div className="search-input-group">
               <label className="search-label">
                 <svg
@@ -345,17 +442,17 @@ export function SearchBar({
                     fill="currentColor"
                   />
                 </svg>
-                <span>To</span>
+                <span>{t("search.to")}</span>
               </label>
               <Select
                 options={stopOptions}
                 value={endStop}
                 onChange={(newValue) => setEndStop(newValue)}
-                placeholder="Select destination..."
+                placeholder={t("search.select_destination")}
                 styles={customSelectStyles}
                 isSearchable
                 isClearable
-                noOptionsMessage={() => "No stops found"}
+                noOptionsMessage={() => t("search.no_stops_found")}
               />
             </div>
 
@@ -399,7 +496,7 @@ export function SearchBar({
                 {isSearching ? (
                   <>
                     <div className="spinner-small"></div>
-                    <span>Searching...</span>
+                    <span>{t("search.searching")}</span>
                   </>
                 ) : (
                   <>
@@ -425,7 +522,7 @@ export function SearchBar({
                         strokeWidth="2"
                       />
                     </svg>
-                    <span>Find Route</span>
+                    <span>{t("search.find_route")}</span>
                   </>
                 )}
               </button>
@@ -433,6 +530,7 @@ export function SearchBar({
                 onClick={handleClear}
                 disabled={isSearching}
                 className="search-btn-secondary"
+                aria-label={t("search.clear")}
               >
                 <svg
                   width="14"
