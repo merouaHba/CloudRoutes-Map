@@ -5,7 +5,7 @@ import { busStopIcon } from "../icons.ts";
 import { Marker } from "react-leaflet";
 import { useFilterStore } from "../hooks/use-filter-store.ts";
 import { MapFilters } from "../types.ts";
-import React, { useState } from "react";
+import  { useState } from "react";
 import { BusStopModal } from "./BusStopModal";
 
 type StopMarker = {
