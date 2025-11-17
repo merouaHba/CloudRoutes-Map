@@ -41,12 +41,14 @@ export function SearchBar({
   const { data: stops } = useStops<StopOption[]>({
     queryKey: [QUERY_KEYS.STOPS],
     select: (data) => {
-      return data.map((stop) => ({
-        value: stop.name,
-        label: stop.name,
-        lat: parseFloat(stop.latitude),
-        lng: parseFloat(stop.longitude),
-      }));
+      return data.map((stop) => {
+        return {
+          value: stop.name,
+          label: stop.name,
+          lat: parseFloat(stop.latitude),
+          lng: parseFloat(stop.longitude),
+        };
+      });
     },
   });
 
@@ -149,7 +151,7 @@ export function SearchBar({
     control: (provided: any, state: any) => ({
       ...provided,
       borderRadius: "12px",
-      borderColor: state.isFocused ? "#0c4a6e" : "#e5e7eb",
+      borderColor: state.isFocused ? "##0c4a6e" : "#e5e7eb",
       borderWidth: "2px",
       minHeight: "48px",
       boxShadow: state.isFocused ? "0 0 0 3px rgba(67, 56, 202, 0.1)" : "none",
@@ -164,7 +166,7 @@ export function SearchBar({
       textAlign: isRTL ? "right" : "left",
       direction: isRTL ? "rtl" : "ltr",
       backgroundColor: state.isSelected
-        ? "#0c4a6e"
+        ? "##0c4a6e"
         : state.isFocused
           ? "#eef2ff"
           : "white",
@@ -221,7 +223,7 @@ export function SearchBar({
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill="#0c4a6e"
+            fill="##0c4a6e"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
@@ -247,15 +249,15 @@ export function SearchBar({
               aria-label={t("filters.close")}
             >
               <svg
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
-                fill="#0c4a6e"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M18 6L6 18M6 6l12 12"
-                  stroke="currentColor"
+                  stroke="#4b5563"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                 />
@@ -305,7 +307,7 @@ export function SearchBar({
             )}
 
             {/* Nearby Stops */}
-            {showNearbyStops && nearbyStops.length > 0 && (
+            {showNearbyStops && (
               <div className="nearby-stops-list">
                 <div className="nearby-stops-header">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -317,44 +319,55 @@ export function SearchBar({
                   </svg>
                   <span>{t("search.nearby_stops")}</span>
                 </div>
-                <div className="nearby-stops-items">
-                  {nearbyStops.slice(0, 3).map((stop, index) => (
-                    <button
-                      key={index}
-                      className="nearby-stop-item"
-                      onClick={() => {
-                        setStartStop({
-                          value: stop.name,
-                          label: stop.name,
-                          lat: stop.lat,
-                          lng: stop.lng,
-                        });
-                        setShowNearbyStops(false);
-                      }}
-                    >
-                      <div className="nearby-stop-info">
-                        <div className="nearby-stop-name">{stop.name}</div>
-                        <div className="nearby-stop-distance">
-                          {stop.walk_distance.toFixed(2)} {t("nearby.km")} •{" "}
-                          {stop.walk_time} {t("nearby.walk_time")}
-                        </div>
-                      </div>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
+                {loadingNearby ? (
+                  <div className="nearby-stops-loading">
+                    <div className="spinner-primary spinner-small"></div>
+                    <span>{t("search.searching")}</span>
+                  </div>
+                ) : nearbyStops.length > 0 ? (
+                  <div className="nearby-stops-items">
+                    {nearbyStops.slice(0, 3).map((stop, index) => (
+                      <button
+                        key={index}
+                        className="nearby-stop-item"
+                        onClick={() => {
+                          setStartStop({
+                            value: stop.name,
+                            label: stop.name,
+                            lat: stop.lat,
+                            lng: stop.lng,
+                          });
+                          setShowNearbyStops(false);
+                        }}
                       >
-                        <path
-                          d="M9 18l6-6-6-6"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                  ))}
-                </div>
+                        <div className="nearby-stop-info">
+                          <div className="nearby-stop-name">{stop.name}</div>
+                          <div className="nearby-stop-distance">
+                            {stop.walk_distance.toFixed(2)} {t("nearby.km")} •{" "}
+                            {stop.walk_time} {t("nearby.walk_time")}
+                          </div>
+                        </div>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M9 18l6-6-6-6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="nearby-stops-empty">
+                    <span>{t("search.no_stops_found")}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -402,22 +415,22 @@ export function SearchBar({
                   aria-label={t("search.swap_locations")}
                 >
                   <svg
-                    width="16"
-                    height="16"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
                       d="M16 17L21 12L16 7"
-                      stroke="currentColor"
+                      stroke="#6b7280"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                     <path
                       d="M8 7L3 12L8 17"
-                      stroke="currentColor"
+                      stroke="#6b7280"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -533,15 +546,15 @@ export function SearchBar({
                 aria-label={t("search.clear")}
               >
                 <svg
-                  width="14"
-                  height="14"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M18 6L6 18M6 6l12 12"
-                    stroke="currentColor"
+                    stroke="#6b7280"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
