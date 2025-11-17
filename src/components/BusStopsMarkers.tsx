@@ -55,7 +55,7 @@ function BusStopPopupContent({
           >
             <path
               d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-              fill="#4338CA"
+              fill="#0c4a6e"
             />
             <circle cx="12" cy="9" r="2.5" fill="white" />
           </svg>
@@ -153,7 +153,7 @@ function BusStopPopupContent({
                 className="spinner-small"
                 style={{
                   borderColor: "rgba(67, 56, 202, 0.3)",
-                  borderTopColor: "#4338ca",
+                  borderTopColor: "#0c4a6e",
                 }}
               ></div>
               <span>{t("bus_stop.loading")}</span>

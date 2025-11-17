@@ -268,7 +268,7 @@ function RouteStepVisual({ step }: { step: RouteStep; index: number }) {
       <Polyline
         positions={step.polyline}
         pathOptions={{
-          color: step.color || "#4338CA",
+          color: step.color || "#0c4a6e",
           weight: 5,
           opacity: 0.8,
           dashArray: step.type === "walk" ? "10, 10" : undefined,
@@ -334,7 +334,7 @@ function RouteStepDetail({ step }: { step: RouteStep; index: number }) {
           >
             <path
               d="M12 2C8 2 4 2.5 4 6v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2l2-2h4l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4z"
-              fill="#4338CA"
+              fill="#0c4a6e"
             />
           </svg>
         </div>

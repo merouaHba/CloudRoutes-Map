@@ -31,7 +31,7 @@ export function Filters({ onApply }: Props) {
     control: (provided: any, state: any) => ({
       ...provided,
       borderRadius: "12px",
-      borderColor: state.isFocused ? "#4338ca" : "#e5e7eb",
+      borderColor: state.isFocused ? "#0c4a6e" : "#e5e7eb",
       borderWidth: "2px",
       minHeight: "48px",
       boxShadow: state.isFocused ? "0 0 0 3px rgba(67, 56, 202, 0.1)" : "none",
@@ -45,7 +45,7 @@ export function Filters({ onApply }: Props) {
       textAlign: isRTL ? "right" : "left",
       direction: isRTL ? "rtl" : "ltr",
       backgroundColor: state.isSelected
-        ? "#4338ca"
+        ? "#0c4a6e"
         : state.isFocused
           ? "#eef2ff"
           : "white",
@@ -124,7 +124,7 @@ export function Filters({ onApply }: Props) {
               width="18"
               height="18"
               viewBox="0 0 24 24"
-              fill="#4338ca"
+              fill="#0c4a6e"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
