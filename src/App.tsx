@@ -25,12 +25,15 @@ createClientApi({
 
 initTraccarClient().catch((e) => console.error("ERROR:", e));
 
+// Initialize React Modal
+Modal.setAppElement("#root");
+
 const isLineDisabled = window?.env?.LINE_IS_DISABLED ?? false;
 
 // Loading Screen Component
 function LoadingScreen() {
   const { t } = useTranslation();
-  
+
   return (
     <div className="map-loading-overlay">
       <div className="loading-content">
@@ -53,7 +56,7 @@ function LoadingScreen() {
           </div>
         </div>
         <div>
-          <div className="loading-subtext">{t('loading')}</div>
+          <div className="loading-subtext">{t("loading")}</div>
         </div>
         <div className="loading-spinner"></div>
         <div className="loading-progress-bar">
@@ -82,7 +85,7 @@ function ZoomControl() {
       <button
         className="zoom-button"
         onClick={handleZoomIn}
-        aria-label={t('controls.zoom_in')}
+        aria-label={t("controls.zoom_in")}
       >
         +
       </button>
@@ -90,7 +93,7 @@ function ZoomControl() {
       <button
         className="zoom-button"
         onClick={handleZoomOut}
-        aria-label={t('controls.zoom_out')}
+        aria-label={t("controls.zoom_out")}
       >
         −
       </button>
@@ -120,17 +123,20 @@ function App() {
       window.addEventListener("message", (event) => {
         if (event.data) {
           // Handle location updates
-          if (event.data.type === 'LOCATION_UPDATE' && 'latitude' in event.data) {
+          if (
+            event.data.type === "LOCATION_UPDATE" &&
+            "latitude" in event.data
+          ) {
             setLocation([event.data.latitude, event.data.longitude]);
           }
-          
+
           // Handle language changes
-          if (event.data.type === 'LANGUAGE_CHANGE' && event.data.language) {
+          if (event.data.type === "LANGUAGE_CHANGE" && event.data.language) {
             i18n.changeLanguage(event.data.language);
           }
-          
+
           // Legacy support - if no type specified, assume location
-          if (!event.data.type && 'latitude' in event.data) {
+          if (!event.data.type && "latitude" in event.data) {
             setLocation([event.data.latitude, event.data.longitude]);
           }
         }
@@ -140,7 +146,7 @@ function App() {
 
   // Update document direction when language changes
   useEffect(() => {
-    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
   }, [i18n.language]);
 
   function getLocation() {
@@ -174,8 +180,8 @@ function App() {
     return (
       <div className="center min-h-screen">
         <div className="vstack align-items-center">
-          <h1>{t('search.no_route_found')}</h1>
-          <button onClick={() => refetch()}>{t('search.searching')}</button>
+          <h1>{t("search.no_route_found")}</h1>
+          <button onClick={() => refetch()}>{t("search.searching")}</button>
         </div>
       </div>
     );
@@ -214,7 +220,7 @@ function App() {
           <button
             className="control-button"
             onClick={() => setIsFiltersOpen(true)}
-            aria-label={t('controls.filters')}
+            aria-label={t("controls.filters")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -234,7 +240,7 @@ function App() {
                 active: displayLocation,
               })}
               onClick={getLocation}
-              aria-label={t('controls.my_location')}
+              aria-label={t("controls.my_location")}
             >
               <svg
                 width="24"

@@ -124,7 +124,7 @@ export function Filters({ onApply }: Props) {
               width="18"
               height="18"
               viewBox="0 0 24 24"
-              fill="none"
+              fill="#4338ca"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
