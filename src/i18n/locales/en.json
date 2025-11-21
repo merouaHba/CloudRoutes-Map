@@ -41,7 +41,10 @@
         "at": "At",
         "to": "To",
         "warning": "Warning",
-        "walking_required": "Walking required"
+        "walking_required": "Walking required",
+        "show_route_on_map": "Show Route on Map",
+        "route_map": "Route Map",
+        "return_to_results": "Return to Results"
     },
     "bus_stop": {
         "title": "Bus Stop",

@@ -52,7 +52,7 @@ export function BusStopModal({
               >
                 <path
                   d="M20 3V12C20 12.71 19.62 13.36 19 13.72V15.25C19 15.66 18.66 16 18.25 16H17.75C17.34 16 17 15.66 17 15.25V14H10V15.25C10 15.66 9.66 16 9.25 16H8.75C8.34 16 8 15.66 8 15.25V13.72C7.39 13.36 7 12.71 7 12V3C7 0 10 0 13.5 0C17 0 20 0 20 3Z"
-                  fill="##0c4a6e"
+                  fill="#0c4a6e"
                 />
               </svg>
             </div>
@@ -158,7 +158,7 @@ export function BusStopModal({
                 {t("bus_stop.lines")} ({stop.lines.length})
               </span>
             </div>
-            <div className="bus-lines-grid">
+            <div className="bus-lines-horizontal">
               {stop.lines.map((line, index) => (
                 <div
                   key={index}

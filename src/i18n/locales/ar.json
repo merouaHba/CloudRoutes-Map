@@ -41,7 +41,10 @@
         "at": "في",
         "to": "إلى",
         "warning": "تحذير",
-        "walking_required": "يتطلب المشي"
+        "walking_required": "يتطلب المشي",
+        "show_route_on_map": "عرض المسار على الخريطة",
+        "route_map": "خريطة المسار",
+        "return_to_results": "العودة إلى النتائج"
     },
     "bus_stop": {
         "title": "محطة الحافلة",

@@ -41,7 +41,10 @@
         "at": "À",
         "to": "Vers",
         "warning": "Attention",
-        "walking_required": "Marche requise"
+        "walking_required": "Marche requise",
+         "show_route_on_map": "Afficher l'itinéraire sur la carte",
+      "route_map": "Carte d'itinéraire",
+      "return_to_results": "Retour aux résultats"
     },
     "bus_stop": {
         "title": "Arrêt de bus",
