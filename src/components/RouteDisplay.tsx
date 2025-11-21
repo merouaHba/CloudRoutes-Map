@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Polyline, Marker, MapContainer, TileLayer } from "react-leaflet";
+import { Polyline, Marker, MapContainer, TileLayer, useMap } from "react-leaflet";
 import { LatLngExpression } from "leaflet";
 import { busStopIcon } from "../icons";
 import { useEffect, useState, useRef } from "react";
@@ -55,14 +55,37 @@ export function RouteDisplay({
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // No need for complex click-outside detection - handled by overlay
-  // Just prevent closing when route map modal is open
+  // Prevent body scroll and disable main map interaction when panel is open
   useEffect(() => {
-    // Prevent body scroll when panel is open
     document.body.style.overflow = "hidden";
+    
+    // Disable main map interaction
+    const rootElement = document.getElementById("root");
+    const mapElement = document.getElementById("map");
+    
+    if (rootElement) {
+      rootElement.setAttribute("aria-hidden", "true");
+      rootElement.style.pointerEvents = "none";
+    }
+    
+    if (mapElement) {
+      mapElement.setAttribute("aria-hidden", "true");
+      mapElement.style.pointerEvents = "none";
+    }
 
     return () => {
       document.body.style.overflow = "";
+      
+      // Re-enable main map interaction
+      if (rootElement) {
+        rootElement.removeAttribute("aria-hidden");
+        rootElement.style.pointerEvents = "";
+      }
+      
+      if (mapElement) {
+        mapElement.removeAttribute("aria-hidden");
+        mapElement.style.pointerEvents = "";
+      }
     };
   }, []);
 
@@ -326,6 +349,143 @@ function RouteStepVisual({ step }: { step: RouteStep; index: number }) {
   return null;
 }
 
+// Enhanced Stops List Component
+function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string }) {
+  const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(stops.length <= 5);
+
+  const displayStops = isExpanded ? stops : stops.slice(0, 3);
+  const hasMore = stops.length > 5;
+
+  return (
+    <div className="step-stops-list">
+      <button
+        className="step-stops-header"
+        onClick={() => hasMore && setIsExpanded(!isExpanded)}
+        style={{ cursor: hasMore ? 'pointer' : 'default' }}
+      >
+        <div className="step-stops-header-left">
+          <div 
+            className="step-stops-icon"
+            style={{ backgroundColor: lineColor }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="5" r="2" fill="white" />
+              <circle cx="12" cy="12" r="2" fill="white" />
+              <circle cx="12" cy="19" r="2" fill="white" />
+              <path
+                d="M12 7v4m0 2v4"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+          <span className="step-stops-title">
+            {t("route.stops_list")} ({stops.length})
+          </span>
+        </div>
+        {hasMore && (
+          <div className={`step-stops-toggle ${isExpanded ? 'expanded' : ''}`}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 9l6 6 6-6"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        )}
+      </button>
+
+      <div className="step-stops-timeline">
+        {displayStops.map((stop, idx) => {
+          const isFirst = idx === 0;
+          const isLast = idx === displayStops.length - 1 && isExpanded;
+          const position = isFirst ? 'first' : isLast ? 'last' : 'middle';
+
+          return (
+            <div 
+              key={idx} 
+              className={`step-stop-item-wrapper ${position}`}
+            >
+              <div className="step-stop-indicator">
+                <div 
+                  className="step-stop-dot"
+                  style={{ 
+                    borderColor: lineColor,
+                    backgroundColor: isFirst || isLast ? lineColor : 'white'
+                  }}
+                >
+                  {isFirst && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  )}
+                  {isLast && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                    </svg>
+                  )}
+                </div>
+                {!isLast && (
+                  <div 
+                    className="step-stop-line"
+                    style={{ backgroundColor: lineColor }}
+                  />
+                )}
+              </div>
+              <div className="step-stop-content">
+                <div className="step-stop-name">{stop}</div>
+                <div className="step-stop-number">
+                  {t("route.stop")} {idx + 1} {t("route.of")} {stops.length}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {hasMore && !isExpanded && (
+          <button
+            className="step-stops-show-more"
+            onClick={() => setIsExpanded(true)}
+            style={{ borderColor: lineColor, color: lineColor }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+            </svg>
+            <span>
+              {t("route.show_more_stops")} ({stops.length - displayStops.length} {t("route.more")})
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RouteStepCard({ step }: { step: RouteStep; index: number }) {
   const { t } = useTranslation();
 
@@ -495,6 +655,13 @@ function RouteStepCard({ step }: { step: RouteStep; index: number }) {
                   {step.distance.toFixed(1)} {t("nearby.km")}
                 </p>
               )}
+              {/* Display all stops */}
+              {step.stops_between && step.stops_between.length > 0 && (
+                <StopsList 
+                  stops={step.stops_between} 
+                  lineColor={getStepColor()}
+                />
+              )}
             </>
           )}
           {step.action === "transfer" && (
@@ -520,6 +687,23 @@ function RouteStepCard({ step }: { step: RouteStep; index: number }) {
   );
 }
 
+// Component to fit map bounds
+function FitBounds({ coordinates }: { coordinates: LatLngExpression[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (coordinates.length > 0) {
+      setTimeout(() => {
+        map.fitBounds(coordinates as any, {
+          padding: [80, 80],
+        });
+      }, 300);
+    }
+  }, [coordinates, map]);
+
+  return null;
+}
+
 function RouteMapModal({
   isOpen,
   onClose,
@@ -532,33 +716,23 @@ function RouteMapModal({
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
-  const mapRef = useRef<any>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
-  useEffect(() => {
-    if (isOpen && mapRef.current && routeData.steps) {
-      const allCoordinates: LatLngExpression[] = [];
+  // Get all coordinates for fitting bounds
+  const getAllCoordinates = (): LatLngExpression[] => {
+    const allCoordinates: LatLngExpression[] = [];
 
-      routeData.steps.forEach((step) => {
-        if (step.polyline && step.polyline.length > 0) {
-          allCoordinates.push(...step.polyline);
-        }
-        if (step.location) {
-          allCoordinates.push(step.location);
-        }
-      });
-
-      if (allCoordinates.length > 0) {
-        setTimeout(() => {
-          if (mapRef.current) {
-            const map = mapRef.current;
-            map.fitBounds(allCoordinates as any, {
-              padding: [80, 80],
-            });
-          }
-        }, 300);
+    routeData.steps.forEach((step) => {
+      if (step.polyline && step.polyline.length > 0) {
+        allCoordinates.push(...step.polyline);
       }
-    }
-  }, [isOpen, routeData]);
+      if (step.location) {
+        allCoordinates.push(step.location);
+      }
+    });
+
+    return allCoordinates;
+  };
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -577,6 +751,8 @@ function RouteMapModal({
 
   const center: LatLngExpression = routeData.steps[0]?.polyline?.[0] ||
     routeData.steps[0]?.location || [36.7538, 3.0588];
+
+  const allCoordinates = getAllCoordinates();
 
   return (
     <Modal
@@ -617,11 +793,7 @@ function RouteMapModal({
         {/* Map */}
         <div className="route-map-wrapper">
           <MapContainer
-            ref={(map) => {
-              if (map) {
-                mapRef.current = map;
-              }
-            }}
+            ref={setMapInstance}
             center={center}
             zoom={13}
             scrollWheelZoom={true}
@@ -629,6 +801,9 @@ function RouteMapModal({
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer url={leafletProvider.url} />
+
+            {/* Fit bounds to route */}
+            <FitBounds coordinates={allCoordinates} />
 
             {/* Render route polylines */}
             {routeData.steps.map((step, index) => {
@@ -675,8 +850,8 @@ function RouteMapModal({
           <button
             className="route-map-zoom-btn"
             onClick={() => {
-              if (mapRef.current) {
-                mapRef.current.zoomIn();
+              if (mapInstance) {
+                mapInstance.zoomIn();
               }
             }}
             aria-label={t("controls.zoom_in")}
@@ -687,8 +862,8 @@ function RouteMapModal({
           <button
             className="route-map-zoom-btn"
             onClick={() => {
-              if (mapRef.current) {
-                mapRef.current.zoomOut();
+              if (mapInstance) {
+                mapInstance.zoomOut();
               }
             }}
             aria-label={t("controls.zoom_out")}

@@ -37,14 +37,19 @@
         "transfer_at": "Correspondance",
         "change_to": "Changer pour",
         "stops": "arrêts",
+        "stops_list": "Arrêts sur l'itinéraire",
+        "stop": "Arrêt",
+        "of": "sur",
+        "show_more_stops": "Afficher plus d'arrêts",
+        "more": "de plus",
         "from": "De",
         "at": "À",
         "to": "Vers",
         "warning": "Attention",
         "walking_required": "Marche requise",
-         "show_route_on_map": "Afficher l'itinéraire sur la carte",
-      "route_map": "Carte d'itinéraire",
-      "return_to_results": "Retour aux résultats"
+        "show_route_on_map": "Afficher l'itinéraire sur la carte",
+        "route_map": "Carte d'itinéraire",
+        "return_to_results": "Retour aux résultats"
     },
     "bus_stop": {
         "title": "Arrêt de bus",
