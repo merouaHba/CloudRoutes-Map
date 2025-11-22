@@ -5,6 +5,7 @@ import {
   MapContainer,
   TileLayer,
   useMap,
+  Popup,
 } from "react-leaflet";
 import { LatLngExpression, DivIcon } from "leaflet";
 import { busStopIcon } from "../icons";
@@ -88,34 +89,44 @@ const createStopIcon = (
     });
   }
 
-  // For special stops (start, end, transfer), use colored circles
+  // For special stops, use meaningful icons
   let bgColor = "#06b6d4";
   const borderColor = "white";
-  let size = 28;
-  let borderWidth = 3;
-  let innerDot = false;
+  let size = 40;
+  let borderWidth = 4;
+  let iconSvg = "";
 
   switch (action) {
     case "board":
       bgColor = "#10b981"; // Green for start
-      size = 40;
-      borderWidth = 4;
-      innerDot = true;
       console.log("🟢 Creating START icon (green)");
+      iconSvg = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8" stroke="white" stroke-width="2.5" fill="none"/>
+          <circle cx="12" cy="12" r="3" fill="white"/>
+        </svg>
+      `;
       break;
     case "arrive":
       bgColor = "#ef4444"; // Red for end
-      size = 40;
-      borderWidth = 4;
-      innerDot = true;
       console.log("🔴 Creating END icon (red)");
+      iconSvg = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="white"/>
+          <circle cx="12" cy="9" r="2.5" fill="${bgColor}"/>
+        </svg>
+      `;
       break;
     case "transfer":
       bgColor = "#f59e0b"; // Orange for transfer
       size = 36;
       borderWidth = 3;
-      innerDot = true;
       console.log("🟠 Creating TRANSFER icon (orange)");
+      iconSvg = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 17l5-5-5-5M8 7l-5 5 5 5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
       break;
   }
 
@@ -135,21 +146,12 @@ const createStopIcon = (
         align-items: center;
         justify-content: center;
       " title="${stopName || ""}">
-        ${
-          innerDot
-            ? `<div style="
-          width: ${size * 0.4}px;
-          height: ${size * 0.4}px;
-          background: white;
-          border-radius: 50%;
-        "></div>`
-            : ""
-        }
+        ${iconSvg}
       </div>
     `,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
+    popupAnchor: [0, -size / 2 - 5],
   });
 };
 
@@ -158,7 +160,7 @@ export function RouteDisplay({ routeData, onClose }: RouteDisplayProps) {
   const isRTL = i18n.language === "ar";
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-console.log(routeData)
+
   // Prevent body scroll and disable main map interaction when panel is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -203,6 +205,170 @@ console.log(routeData)
 
   const handleShowRoute = () => {
     setIsRouteModalOpen(true);
+  };
+
+  // Get all stops with their types for display
+  const getAllStops = () => {
+    const stops: Array<{
+      location: LatLngExpression;
+      action: "board" | "arrive" | "transfer" | "travel";
+      name: string;
+      line?: string;
+    }> = [];
+
+    let isFirstBoarding = true;
+    const processedStopNames = new Set<string>();
+    
+    // First pass: collect all special stops (board, transfer, arrive) with their names
+    const specialStops = new Map<string, "board" | "arrive" | "transfer">();
+    
+    routeData.steps.forEach((step, stepIndex) => {
+      console.log(`Step ${stepIndex}:`, {
+        action: step.action,
+        at: step.at,
+        hasLocation: !!step.location,
+        hasPolyline: !!step.polyline,
+        polylineLength: step.polyline?.length,
+      });
+
+      // Mark special stops
+      if (step.action === "board" && step.at && isFirstBoarding) {
+        specialStops.set(step.at, "board");
+        isFirstBoarding = false;
+      }
+      
+      if (step.action === "transfer" && step.at) {
+        specialStops.set(step.at, "transfer");
+      }
+      
+      if (step.action === "arrive" && step.at) {
+        specialStops.set(step.at, "arrive");
+      }
+    });
+
+    console.log("🏷️ Special stops identified:", Array.from(specialStops.entries()));
+
+    // Second pass: process all stops with correct actions
+    isFirstBoarding = true;
+    routeData.steps.forEach((step, stepIndex) => {
+      // Start stop - board action doesn't have location in API
+      // We need to get it from the next travel step's first polyline point
+      if (step.action === "board" && isFirstBoarding && step.at) {
+        let location = null;
+
+        // Look for the next travel step to get polyline start point
+        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
+          const nextStep = routeData.steps[i];
+          if (
+            nextStep.action === "travel" &&
+            nextStep.polyline &&
+            nextStep.polyline.length > 0
+          ) {
+            location = nextStep.polyline[0];
+            console.log(
+              "✅ Found start location from next travel step polyline[0]:",
+              location
+            );
+            break;
+          }
+        }
+
+        if (location) {
+          stops.push({
+            location: location,
+            action: "board",
+            name: step.at,
+            line: step.line,
+          });
+          processedStopNames.add(step.at);
+          isFirstBoarding = false;
+          console.log("🟢 Start stop added:", step.at, location);
+        } else {
+          console.warn(
+            "⚠️ Start stop has no location - no travel step found:",
+            step.at
+          );
+        }
+      }
+
+      // Transfer stops - API provides location for transfer actions
+      if (step.action === "transfer" && step.location && step.at) {
+        if (!processedStopNames.has(step.at)) {
+          stops.push({
+            location: step.location,
+            action: "transfer",
+            name: step.at,
+          });
+          processedStopNames.add(step.at);
+          console.log("🔄 Transfer stop added:", step.at, step.location);
+        }
+      }
+
+      // Regular stops from travel steps (stops_between)
+      if (step.action === "travel" && step.stops_between && step.polyline) {
+        const stopsCount = step.stops_between.length;
+        const polylineLength = step.polyline.length;
+
+        console.log(
+          `Processing ${stopsCount} regular stops along polyline of ${polylineLength} points`
+        );
+
+        step.stops_between.forEach((stopName, idx) => {
+          // Skip if already processed (start, transfer, or arrive)
+          if (processedStopNames.has(stopName)) {
+            console.log(`⏭️ Skipping already processed stop: ${stopName}`);
+            return;
+          }
+
+          // Check if this stop is actually a special stop (transfer or arrive)
+          // If so, skip it here - it will be processed in its dedicated section
+          if (specialStops.has(stopName)) {
+            console.log(`⏭️ Skipping special stop for later processing: ${stopName} (${specialStops.get(stopName)})`);
+            return;
+          }
+
+          // Estimate stop location along the polyline
+          // Distribute stops evenly along the polyline
+          const progress = (idx + 1) / (stopsCount + 1);
+          const polylineIndex = Math.floor(progress * (polylineLength - 1));
+          const stopLocation = step.polyline![polylineIndex];
+
+          if (stopLocation) {
+            stops.push({
+              location: stopLocation,
+              action: "travel",
+              name: stopName,
+              line: step.line,
+            });
+            processedStopNames.add(stopName);
+            console.log(`🚏 Regular stop added: ${stopName}`);
+          }
+        });
+      }
+
+      // End stop - API provides location for arrive actions
+      if (step.action === "arrive" && step.location && step.at) {
+        if (!processedStopNames.has(step.at)) {
+          stops.push({
+            location: step.location,
+            action: "arrive",
+            name: step.at,
+          });
+          processedStopNames.add(step.at);
+          console.log("🎯 End stop added:", step.at, step.location);
+        }
+      }
+    });
+
+    console.log("📍 Total stops found:", stops.length);
+    console.log("Stop types:", {
+      start: stops.filter((s) => s.action === "board").length,
+      regular: stops.filter((s) => s.action === "travel").length,
+      transfer: stops.filter((s) => s.action === "transfer").length,
+      end: stops.filter((s) => s.action === "arrive").length,
+    });
+
+    return stops;
   };
 
   return (
@@ -423,6 +589,7 @@ console.log(routeData)
         isOpen={isRouteModalOpen}
         onClose={() => setIsRouteModalOpen(false)}
         routeData={routeData}
+        getAllStops={getAllStops}
       />
     </>
   );
@@ -826,16 +993,23 @@ function RouteMapModal({
   isOpen,
   onClose,
   routeData,
+  getAllStops,
 }: {
   isOpen: boolean;
   onClose: () => void;
   routeData: RouteData;
+  getAllStops: () => Array<{
+    location: LatLngExpression;
+    action: "board" | "arrive" | "transfer" | "travel";
+    name: string;
+    line?: string;
+  }>;
 }) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
   const [mapInstance, setMapInstance] = useState<any>(null);
-console.log(routeData.steps)
+
   // Get all coordinates for fitting bounds
   const getAllCoordinates = (): LatLngExpression[] => {
     const allCoordinates: LatLngExpression[] = [];
@@ -850,139 +1024,6 @@ console.log(routeData.steps)
     });
 
     return allCoordinates;
-  };
-
-  // Get all stops with their types for display
-  const getAllStops = () => {
-    const stops: Array<{
-      location: LatLngExpression;
-      action: "board" | "arrive" | "transfer" | "travel";
-      name: string;
-      line?: string;
-    }> = [];
-
-    let isFirstBoarding = true;
-    const processedStopNames = new Set<string>();
-
-    routeData.steps.forEach((step, stepIndex) => {
-      console.log(`Step ${stepIndex}:`, {
-        action: step.action,
-        at: step.at,
-        hasLocation: !!step.location,
-        hasPolyline: !!step.polyline,
-        polylineLength: step.polyline?.length,
-      });
-
-      // Start stop - board action doesn't have location in API
-      // We need to get it from the next travel step's first polyline point
-      if (step.action === "board" && isFirstBoarding && step.at) {
-        let location = null;
-
-        // Look for the next travel step to get polyline start point
-        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
-          const nextStep = routeData.steps[i];
-          if (
-            nextStep.action === "travel" &&
-            nextStep.polyline &&
-            nextStep.polyline.length > 0
-          ) {
-            location = nextStep.polyline[0];
-            console.log(
-              "✅ Found start location from next travel step polyline[0]:",
-              location
-            );
-            break;
-          }
-        }
-
-        if (location) {
-          stops.push({
-            location: location,
-            action: "board",
-            name: step.at,
-            line: step.line,
-          });
-          processedStopNames.add(step.at);
-          isFirstBoarding = false;
-          console.log("🟢 Start stop added:", step.at, location);
-        } else {
-          console.warn(
-            "⚠️ Start stop has no location - no travel step found:",
-            step.at
-          );
-        }
-      }
-
-      // Transfer stops - API provides location for transfer actions
-      if (step.action === "transfer" && step.location && step.at) {
-        if (!processedStopNames.has(step.at)) {
-          stops.push({
-            location: step.location,
-            action: "transfer",
-            name: step.at,
-          });
-          processedStopNames.add(step.at);
-          console.log("🔄 Transfer stop added:", step.at, step.location);
-        }
-      }
-
-      // Regular stops from travel steps (stops_between)
-      if (step.action === "travel" && step.stops_between && step.polyline) {
-        const stopsCount = step.stops_between.length;
-        const polylineLength = step.polyline.length;
-
-        console.log(
-          `Processing ${stopsCount} regular stops along polyline of ${polylineLength} points`
-        );
-
-        step.stops_between.forEach((stopName, idx) => {
-          // Skip if already processed (start or transfer)
-          if (processedStopNames.has(stopName)) {
-            return;
-          }
-
-          // Estimate stop location along the polyline
-          // Distribute stops evenly along the polyline
-          const progress = (idx + 1) / (stopsCount + 1);
-          const polylineIndex = Math.floor(progress * (polylineLength - 1));
-          const stopLocation = step.polyline![polylineIndex];
-
-          if (stopLocation) {
-            stops.push({
-              location: stopLocation,
-              action: "travel",
-              name: stopName,
-              line: step.line,
-            });
-            processedStopNames.add(stopName);
-          }
-        });
-      }
-
-      // End stop - API provides location for arrive actions
-      if (step.action === "arrive" && step.location && step.at) {
-
-        if (!processedStopNames.has(step.at)) {
-          stops.push({
-            location: step.location,
-            action: "arrive",
-            name: step.at,
-          });
-          processedStopNames.add(step.at);
-          console.log("🎯 End stop added:", step.at, step.location);
-        }
-      }
-    });
-
-    console.log("📍 Total stops found:", stops.length);
-    console.log("Stop types:", {
-      start: stops.filter((s) => s.action === "board").length,
-      regular: stops.filter((s) => s.action === "travel").length,
-      transfer: stops.filter((s) => s.action === "transfer").length,
-      end: stops.filter((s) => s.action === "arrive").length,
-    });
-
-    return stops;
   };
 
   // Prevent body scroll when modal is open
@@ -1005,7 +1046,7 @@ console.log(routeData.steps)
 
   const allCoordinates = getAllCoordinates();
   const allStops = getAllStops();
-console.log("steps of map",allStops)
+
   return (
     <Modal
       isOpen={isOpen}
@@ -1103,7 +1144,51 @@ console.log("steps of map",allStops)
                 position={stop.location}
                 icon={createStopIcon(stop.action, stop.name)}
                 title={stop.name}
-              />
+              >
+                <Popup>
+                  <div style={{ 
+                    textAlign: 'center',
+                    padding: '8px',
+                    minWidth: '150px'
+                  }}>
+                    <div style={{
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      marginBottom: '6px',
+                      color: '#1f2937',
+                      direction: isRTL ? 'rtl' : 'ltr'
+                    }}>
+                      {stop.name}
+                    </div>
+                    {stop.line && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        marginTop: '4px'
+                      }}>
+                        {t('filters.lines')}: {stop.line}
+                      </div>
+                    )}
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#9ca3af',
+                      marginTop: '6px',
+                      padding: '4px 8px',
+                      backgroundColor: 
+                        stop.action === 'board' ? '#d1fae5' :
+                        stop.action === 'arrive' ? '#fee2e2' :
+                        stop.action === 'transfer' ? '#fef3c7' : '#f0f9ff',
+                      borderRadius: '6px',
+                      fontWeight: '600'
+                    }}>
+                      {stop.action === 'board' ? t('route.board') :
+                       stop.action === 'arrive' ? t('route.arrive') :
+                       stop.action === 'transfer' ? t('route.transfer') :
+                       t('bus_stop.title')}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
         </div>

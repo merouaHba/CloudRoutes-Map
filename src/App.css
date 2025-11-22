@@ -4539,3 +4539,43 @@ body:has(.route-results-wrapper) .leaflet-popup {
   width: 100% !important;
   height: 100% !important;
 }
+
+
+/* ============================================
+   ADD THESE STYLES TO YOUR src/App.css FILE
+   Add them before the final closing comment
+   ============================================ */
+
+/* Custom styles for route map stop popups */
+.route-map-wrapper .leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  border: none !important;
+  padding: 0 !important;
+  background: white !important;
+  overflow: hidden !important;
+}
+
+.route-map-wrapper .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 180px !important;
+}
+
+.route-map-wrapper .leaflet-popup-tip {
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.route-map-wrapper .leaflet-popup-close-button {
+  padding: 8px !important;
+  color: #6b7280 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+}
+
+.route-map-wrapper .leaflet-popup-close-button:hover {
+  color: #1f2937 !important;
+  background: #f3f4f6 !important;
+  border-radius: 4px !important;
+}
