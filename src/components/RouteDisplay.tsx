@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Polyline, Marker, MapContainer, TileLayer, useMap } from "react-leaflet";
-import { LatLngExpression } from "leaflet";
+import {
+  Polyline,
+  Marker,
+  MapContainer,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+import { LatLngExpression, DivIcon } from "leaflet";
 import { busStopIcon } from "../icons";
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "react-modal";
 import { useGlobalStore } from "../store";
+import L from "leaflet";
 
 type RouteStep = {
   action: string;
@@ -46,28 +53,125 @@ type RouteDisplayProps = {
   mapRef?: any;
 };
 
-export function RouteDisplay({
-  routeData,
-  onClose,
-}: RouteDisplayProps) {
+// Custom marker icons for different stop types
+const createStopIcon = (
+  action: "board" | "arrive" | "transfer" | "travel",
+  stopName?: string
+): DivIcon => {
+  console.log(`Creating icon for: ${stopName} - Type: ${action}`);
+
+  // For regular stops, use the same icon as in the main map
+  if (action === "travel") {
+    return L.divIcon({
+      className: "custom-bus-stop-icon",
+      html: `
+        <div style="
+          width: 30px;
+          height: 30px;
+          background: white;
+          border: 2px solid #06b6d4;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s ease;
+        " title="${stopName || ""}">
+          <svg width="20" height="20" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 3V12C20 12.71 19.62 13.36 19 13.72V15.25C19 15.66 18.66 16 18.25 16H17.75C17.34 16 17 15.66 17 15.25V14H10V15.25C10 15.66 9.66 16 9.25 16H8.75C8.34 16 8 15.66 8 15.25V13.72C7.39 13.36 7 12.71 7 12V3C7 0 10 0 13.5 0C17 0 20 0 20 3ZM11 11C11 10.45 10.55 10 10 10C9.45 10 9 10.45 9 11C9 11.55 9.45 12 10 12C10.55 12 11 11.55 11 11ZM18 11C18 10.45 17.55 10 17 10C16.45 10 16 10.45 16 11C16 11.55 16.45 12 17 12C17.55 12 18 11.55 18 11ZM18 3H9V7H18V3ZM5 5.5C4.97 4.12 3.83 3 2.45 3.05C1.07 3.08 -0.0299996 4.22 4.40981e-07 5.6C0.0300004 6.77 0.86 7.77 2 8V16H3V8C4.18 7.76 5 6.71 5 5.5Z" fill="#06b6d4"/>
+          </svg>
+        </div>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15],
+    });
+  }
+
+  // For special stops (start, end, transfer), use colored circles
+  let bgColor = "#06b6d4";
+  const borderColor = "white";
+  let size = 28;
+  let borderWidth = 3;
+  let innerDot = false;
+
+  switch (action) {
+    case "board":
+      bgColor = "#10b981"; // Green for start
+      size = 40;
+      borderWidth = 4;
+      innerDot = true;
+      console.log("🟢 Creating START icon (green)");
+      break;
+    case "arrive":
+      bgColor = "#ef4444"; // Red for end
+      size = 40;
+      borderWidth = 4;
+      innerDot = true;
+      console.log("🔴 Creating END icon (red)");
+      break;
+    case "transfer":
+      bgColor = "#f59e0b"; // Orange for transfer
+      size = 36;
+      borderWidth = 3;
+      innerDot = true;
+      console.log("🟠 Creating TRANSFER icon (orange)");
+      break;
+  }
+
+  return L.divIcon({
+    className: "custom-stop-icon",
+    html: `
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background: ${bgColor};
+        border: ${borderWidth}px solid ${borderColor};
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: relative;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      " title="${stopName || ""}">
+        ${
+          innerDot
+            ? `<div style="
+          width: ${size * 0.4}px;
+          height: ${size * 0.4}px;
+          background: white;
+          border-radius: 50%;
+        "></div>`
+            : ""
+        }
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
+};
+
+export function RouteDisplay({ routeData, onClose }: RouteDisplayProps) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-
+console.log(routeData)
   // Prevent body scroll and disable main map interaction when panel is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    
+
     // Disable main map interaction
     const rootElement = document.getElementById("root");
     const mapElement = document.getElementById("map");
-    
+
     if (rootElement) {
       rootElement.setAttribute("aria-hidden", "true");
       rootElement.style.pointerEvents = "none";
     }
-    
+
     if (mapElement) {
       mapElement.setAttribute("aria-hidden", "true");
       mapElement.style.pointerEvents = "none";
@@ -75,13 +179,13 @@ export function RouteDisplay({
 
     return () => {
       document.body.style.overflow = "";
-      
+
       // Re-enable main map interaction
       if (rootElement) {
         rootElement.removeAttribute("aria-hidden");
         rootElement.style.pointerEvents = "";
       }
-      
+
       if (mapElement) {
         mapElement.removeAttribute("aria-hidden");
         mapElement.style.pointerEvents = "";
@@ -350,7 +454,13 @@ function RouteStepVisual({ step }: { step: RouteStep; index: number }) {
 }
 
 // Enhanced Stops List Component
-function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string }) {
+function StopsList({
+  stops,
+  lineColor,
+}: {
+  stops: string[];
+  lineColor: string;
+}) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(stops.length <= 5);
 
@@ -362,10 +472,10 @@ function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string })
       <button
         className="step-stops-header"
         onClick={() => hasMore && setIsExpanded(!isExpanded)}
-        style={{ cursor: hasMore ? 'pointer' : 'default' }}
+        style={{ cursor: hasMore ? "pointer" : "default" }}
       >
         <div className="step-stops-header-left">
-          <div 
+          <div
             className="step-stops-icon"
             style={{ backgroundColor: lineColor }}
           >
@@ -392,7 +502,7 @@ function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string })
           </span>
         </div>
         {hasMore && (
-          <div className={`step-stops-toggle ${isExpanded ? 'expanded' : ''}`}>
+          <div className={`step-stops-toggle ${isExpanded ? "expanded" : ""}`}>
             <svg
               width="16"
               height="16"
@@ -416,34 +526,41 @@ function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string })
         {displayStops.map((stop, idx) => {
           const isFirst = idx === 0;
           const isLast = idx === displayStops.length - 1 && isExpanded;
-          const position = isFirst ? 'first' : isLast ? 'last' : 'middle';
+          const position = isFirst ? "first" : isLast ? "last" : "middle";
 
           return (
-            <div 
-              key={idx} 
-              className={`step-stop-item-wrapper ${position}`}
-            >
+            <div key={idx} className={`step-stop-item-wrapper ${position}`}>
               <div className="step-stop-indicator">
-                <div 
+                <div
                   className="step-stop-dot"
-                  style={{ 
+                  style={{
                     borderColor: lineColor,
-                    backgroundColor: isFirst || isLast ? lineColor : 'white'
+                    backgroundColor: isFirst || isLast ? lineColor : "white",
                   }}
                 >
                   {isFirst && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                    >
                       <circle cx="12" cy="12" r="10" />
                     </svg>
                   )}
                   {isLast && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                    >
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                     </svg>
                   )}
                 </div>
                 {!isLast && (
-                  <div 
+                  <div
                     className="step-stop-line"
                     style={{ backgroundColor: lineColor }}
                   />
@@ -477,7 +594,8 @@ function StopsList({ stops, lineColor }: { stops: string[]; lineColor: string })
               <circle cx="12" cy="18" r="1.5" fill="currentColor" />
             </svg>
             <span>
-              {t("route.show_more_stops")} ({stops.length - displayStops.length} {t("route.more")})
+              {t("route.show_more_stops")} ({stops.length - displayStops.length}{" "}
+              {t("route.more")})
             </span>
           </button>
         )}
@@ -657,8 +775,8 @@ function RouteStepCard({ step }: { step: RouteStep; index: number }) {
               )}
               {/* Display all stops */}
               {step.stops_between && step.stops_between.length > 0 && (
-                <StopsList 
-                  stops={step.stops_between} 
+                <StopsList
+                  stops={step.stops_between}
                   lineColor={getStepColor()}
                 />
               )}
@@ -717,7 +835,7 @@ function RouteMapModal({
   const isRTL = i18n.language === "ar";
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
   const [mapInstance, setMapInstance] = useState<any>(null);
-
+console.log(routeData.steps)
   // Get all coordinates for fitting bounds
   const getAllCoordinates = (): LatLngExpression[] => {
     const allCoordinates: LatLngExpression[] = [];
@@ -732,6 +850,139 @@ function RouteMapModal({
     });
 
     return allCoordinates;
+  };
+
+  // Get all stops with their types for display
+  const getAllStops = () => {
+    const stops: Array<{
+      location: LatLngExpression;
+      action: "board" | "arrive" | "transfer" | "travel";
+      name: string;
+      line?: string;
+    }> = [];
+
+    let isFirstBoarding = true;
+    const processedStopNames = new Set<string>();
+
+    routeData.steps.forEach((step, stepIndex) => {
+      console.log(`Step ${stepIndex}:`, {
+        action: step.action,
+        at: step.at,
+        hasLocation: !!step.location,
+        hasPolyline: !!step.polyline,
+        polylineLength: step.polyline?.length,
+      });
+
+      // Start stop - board action doesn't have location in API
+      // We need to get it from the next travel step's first polyline point
+      if (step.action === "board" && isFirstBoarding && step.at) {
+        let location = null;
+
+        // Look for the next travel step to get polyline start point
+        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
+          const nextStep = routeData.steps[i];
+          if (
+            nextStep.action === "travel" &&
+            nextStep.polyline &&
+            nextStep.polyline.length > 0
+          ) {
+            location = nextStep.polyline[0];
+            console.log(
+              "✅ Found start location from next travel step polyline[0]:",
+              location
+            );
+            break;
+          }
+        }
+
+        if (location) {
+          stops.push({
+            location: location,
+            action: "board",
+            name: step.at,
+            line: step.line,
+          });
+          processedStopNames.add(step.at);
+          isFirstBoarding = false;
+          console.log("🟢 Start stop added:", step.at, location);
+        } else {
+          console.warn(
+            "⚠️ Start stop has no location - no travel step found:",
+            step.at
+          );
+        }
+      }
+
+      // Transfer stops - API provides location for transfer actions
+      if (step.action === "transfer" && step.location && step.at) {
+        if (!processedStopNames.has(step.at)) {
+          stops.push({
+            location: step.location,
+            action: "transfer",
+            name: step.at,
+          });
+          processedStopNames.add(step.at);
+          console.log("🔄 Transfer stop added:", step.at, step.location);
+        }
+      }
+
+      // Regular stops from travel steps (stops_between)
+      if (step.action === "travel" && step.stops_between && step.polyline) {
+        const stopsCount = step.stops_between.length;
+        const polylineLength = step.polyline.length;
+
+        console.log(
+          `Processing ${stopsCount} regular stops along polyline of ${polylineLength} points`
+        );
+
+        step.stops_between.forEach((stopName, idx) => {
+          // Skip if already processed (start or transfer)
+          if (processedStopNames.has(stopName)) {
+            return;
+          }
+
+          // Estimate stop location along the polyline
+          // Distribute stops evenly along the polyline
+          const progress = (idx + 1) / (stopsCount + 1);
+          const polylineIndex = Math.floor(progress * (polylineLength - 1));
+          const stopLocation = step.polyline![polylineIndex];
+
+          if (stopLocation) {
+            stops.push({
+              location: stopLocation,
+              action: "travel",
+              name: stopName,
+              line: step.line,
+            });
+            processedStopNames.add(stopName);
+          }
+        });
+      }
+
+      // End stop - API provides location for arrive actions
+      if (step.action === "arrive" && step.location && step.at) {
+
+        if (!processedStopNames.has(step.at)) {
+          stops.push({
+            location: step.location,
+            action: "arrive",
+            name: step.at,
+          });
+          processedStopNames.add(step.at);
+          console.log("🎯 End stop added:", step.at, step.location);
+        }
+      }
+    });
+
+    console.log("📍 Total stops found:", stops.length);
+    console.log("Stop types:", {
+      start: stops.filter((s) => s.action === "board").length,
+      regular: stops.filter((s) => s.action === "travel").length,
+      transfer: stops.filter((s) => s.action === "transfer").length,
+      end: stops.filter((s) => s.action === "arrive").length,
+    });
+
+    return stops;
   };
 
   // Prevent body scroll when modal is open
@@ -753,7 +1004,8 @@ function RouteMapModal({
     routeData.steps[0]?.location || [36.7538, 3.0588];
 
   const allCoordinates = getAllCoordinates();
-
+  const allStops = getAllStops();
+console.log("steps of map",allStops)
   return (
     <Modal
       isOpen={isOpen}
@@ -762,6 +1014,21 @@ function RouteMapModal({
       overlayClassName="route-map-modal-overlay"
       closeTimeoutMS={300}
       shouldCloseOnOverlayClick={false}
+      style={{
+        content: {
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          height: "100vh",
+          margin: 0,
+          padding: 0,
+          border: "none",
+          borderRadius: 0,
+        },
+      }}
     >
       <div className={`route-map-container ${isRTL ? "rtl" : ""}`}>
         {/* Header */}
@@ -798,6 +1065,11 @@ function RouteMapModal({
             zoom={13}
             scrollWheelZoom={true}
             zoomControl={false}
+            dragging={true}
+            touchZoom={true}
+            doubleClickZoom={true}
+            boxZoom={true}
+            keyboard={true}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer url={leafletProvider.url} />
@@ -824,24 +1096,15 @@ function RouteMapModal({
               return null;
             })}
 
-            {/* Render markers for stops */}
-            {routeData.steps.map((step, index) => {
-              if (
-                step.location &&
-                (step.action === "board" ||
-                  step.action === "transfer" ||
-                  step.action === "arrive")
-              ) {
-                return (
-                  <Marker
-                    key={`marker-${index}`}
-                    position={step.location}
-                    icon={busStopIcon}
-                  />
-                );
-              }
-              return null;
-            })}
+            {/* Render all stops with appropriate icons */}
+            {allStops.map((stop, index) => (
+              <Marker
+                key={`stop-${index}-${stop.name}`}
+                position={stop.location}
+                icon={createStopIcon(stop.action, stop.name)}
+                title={stop.name}
+              />
+            ))}
           </MapContainer>
         </div>
 
