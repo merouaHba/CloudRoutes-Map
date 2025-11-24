@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import "./App.css";
-import "./i18n/index.ts"; // Import i18n first
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import "./i18n/index.ts";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  Polyline,
+} from "react-leaflet";
 import { LineMarkers } from "./components/LineMarkers.tsx";
 import { createClientApi } from "@cloudroutes/query";
 import { Env } from "./config/env.ts";
@@ -15,9 +21,9 @@ import { useDefaultLocation } from "@cloudroutes/query/lines";
 import clsx from "clsx";
 import { userIcon } from "./icons.ts";
 import { useGlobalStore } from "./store";
-import { SearchBar } from "./components/SearchBar.tsx";
-import { RouteDisplay } from "./components/RouteDisplay.tsx";
 import { useTranslation } from "react-i18next";
+import { LatLngExpression } from "leaflet";
+import L from "leaflet";
 
 createClientApi({
   baseURL: Env.API_URL,
@@ -25,10 +31,100 @@ createClientApi({
 
 initTraccarClient().catch((e) => console.error("ERROR:", e));
 
-// Initialize React Modal
 Modal.setAppElement("#root");
 
 const isLineDisabled = window?.env?.LINE_IS_DISABLED ?? false;
+
+// Extend window type for React Native communication
+declare global {
+  interface Window {
+    env?: {
+      API_URL?: string;
+      TRACCAR_URL?: string;
+      TRACCAR_WS_URL?: string;
+      TRACCAR_TOKEN?: string;
+      LINE_IS_DISABLED?: boolean;
+    };
+    language?: string;
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+  }
+}
+
+// Route data types
+type RouteStep = {
+  action: string;
+  type?: string;
+  line?: string;
+  at?: string;
+  to?: string;
+  from?: string;
+  stops?: number;
+  polyline?: LatLngExpression[];
+  color?: string;
+  stops_between?: string[];
+  duration?: number;
+  distance?: number;
+  location?: LatLngExpression;
+};
+
+type RouteData = {
+  success: boolean;
+  type: string;
+  summary: string;
+  total_time: number;
+  total_price: number;
+  total_distance: number;
+  steps: RouteStep[];
+  metadata?: {
+    transfers?: number;
+    lines_used?: string[];
+    total_stops?: number;
+    warning?: string | null;
+  };
+};
+
+// Custom marker icons for route stops
+const createRouteStopIcon = (type: "start" | "end" | "transfer" | "stop") => {
+  let bgColor = "#06b6d4";
+  let size = 24;
+
+  switch (type) {
+    case "start":
+      bgColor = "#10b981";
+      size = 32;
+      break;
+    case "end":
+      bgColor = "#ef4444";
+      size = 32;
+      break;
+    case "transfer":
+      bgColor = "#f59e0b";
+      size = 28;
+      break;
+    case "stop":
+      bgColor = "#06b6d4";
+      size = 20;
+      break;
+  }
+
+  return L.divIcon({
+    className: "custom-route-stop-icon",
+    html: `
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background: ${bgColor};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      "></div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
 
 // Loading Screen Component
 function LoadingScreen() {
@@ -72,19 +168,11 @@ function ZoomControl() {
   const map = useMap();
   const { t } = useTranslation();
 
-  const handleZoomIn = () => {
-    map.zoomIn();
-  };
-
-  const handleZoomOut = () => {
-    map.zoomOut();
-  };
-
   return (
     <div className="zoom-controls">
       <button
         className="zoom-button"
-        onClick={handleZoomIn}
+        onClick={() => map.zoomIn()}
         aria-label={t("controls.zoom_in")}
       >
         +
@@ -92,12 +180,121 @@ function ZoomControl() {
       <div className="zoom-divider" />
       <button
         className="zoom-button"
-        onClick={handleZoomOut}
+        onClick={() => map.zoomOut()}
         aria-label={t("controls.zoom_out")}
       >
         −
       </button>
     </div>
+  );
+}
+
+// Component to fit map bounds when route is displayed
+function FitRouteBounds({ routeData }: { routeData: RouteData | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!routeData) return;
+
+    const allCoordinates: LatLngExpression[] = [];
+    routeData.steps.forEach((step) => {
+      if (step.polyline && step.polyline.length > 0) {
+        allCoordinates.push(...step.polyline);
+      }
+      if (step.location) {
+        allCoordinates.push(step.location);
+      }
+    });
+
+    if (allCoordinates.length > 0) {
+      setTimeout(() => {
+        map.fitBounds(allCoordinates as any, { padding: [50, 50] });
+      }, 300);
+    }
+  }, [routeData, map]);
+
+  return null;
+}
+
+// Route visualization component - renders directly on main map
+function RouteVisualization({ routeData }: { routeData: RouteData }) {
+  const getKeyStops = () => {
+    const stops: Array<{
+      location: LatLngExpression;
+      type: "start" | "end" | "transfer" | "stop";
+      name: string;
+    }> = [];
+
+    let isFirstBoarding = true;
+
+    routeData.steps.forEach((step, stepIndex) => {
+      // Start stop
+      if (step.action === "board" && isFirstBoarding && step.at) {
+        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
+          const nextStep = routeData.steps[i];
+          if (nextStep.action === "travel" && nextStep.polyline?.length) {
+            stops.push({
+              location: nextStep.polyline[0],
+              type: "start",
+              name: step.at,
+            });
+            break;
+          }
+        }
+        isFirstBoarding = false;
+      }
+
+      // Transfer stops
+      if (step.action === "transfer" && step.location && step.at) {
+        stops.push({
+          location: step.location,
+          type: "transfer",
+          name: step.at,
+        });
+      }
+
+      // End stop
+      if (step.action === "arrive" && step.location && step.at) {
+        stops.push({ location: step.location, type: "end", name: step.at });
+      }
+    });
+
+    return stops;
+  };
+
+  const keyStops = getKeyStops();
+
+  return (
+    <>
+      {/* Render polylines */}
+      {routeData.steps.map((step, index) => {
+        if (step.polyline && step.polyline.length > 0) {
+          return (
+            <Polyline
+              key={`route-polyline-${index}`}
+              positions={step.polyline}
+              pathOptions={{
+                color: step.color || "#0c4a6e",
+                weight: 5,
+                opacity: 0.8,
+                dashArray: step.type === "walk" ? "10, 10" : undefined,
+              }}
+            />
+          );
+        }
+        return null;
+      })}
+
+      {/* Render key stop markers */}
+      {keyStops.map((stop, index) => (
+        <Marker
+          key={`route-stop-${index}`}
+          position={stop.location}
+          icon={createRouteStopIcon(stop.type)}
+          title={stop.name}
+        />
+      ))}
+    </>
   );
 }
 
@@ -113,35 +310,44 @@ function App() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [displayLocation, setDisplayLocation] = useState(false);
-  const [routeData, setRouteData] = useState<any>(null);
+  const [routeData, setRouteData] = useState<RouteData | null>(null);
   const map = useRef<any>(null);
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
 
-  // Handle messages from React Native (location and language)
+  // Handle messages from React Native
   useEffect(() => {
-    if (window.env) {
-      window.addEventListener("message", (event) => {
-        if (event.data) {
-          // Handle location updates
-          if (
-            event.data.type === "LOCATION_UPDATE" &&
-            "latitude" in event.data
-          ) {
-            setLocation([event.data.latitude, event.data.longitude]);
-          }
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data) return;
+      const data = event.data;
 
-          // Handle language changes
-          if (event.data.type === "LANGUAGE_CHANGE" && event.data.language) {
-            i18n.changeLanguage(event.data.language);
-          }
+      // Handle location updates
+      if (data.type === "LOCATION_UPDATE" && "latitude" in data) {
+        setLocation([data.latitude, data.longitude]);
+      }
 
-          // Legacy support - if no type specified, assume location
-          if (!event.data.type && "latitude" in event.data) {
-            setLocation([event.data.latitude, event.data.longitude]);
-          }
-        }
-      });
-    }
+      // Handle language changes
+      if (data.type === "LANGUAGE_CHANGE" && data.language) {
+        i18n.changeLanguage(data.language);
+      }
+
+      // Handle route data from React Native
+      if (data.type === "ROUTE_DATA" && data.routeData) {
+        setRouteData(data.routeData);
+      }
+
+      // Handle clear route
+      if (data.type === "CLEAR_ROUTE") {
+        setRouteData(null);
+      }
+
+      // Legacy support
+      if (!data.type && "latitude" in data) {
+        setLocation([data.latitude, data.longitude]);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [i18n]);
 
   // Update document direction when language changes
@@ -151,11 +357,8 @@ function App() {
 
   function getLocation() {
     setDisplayLocation((prev) => !prev);
-
-    if (!displayLocation) {
-      if (location) {
-        map?.current?.flyTo(location, 15);
-      }
+    if (!displayLocation && location) {
+      map?.current?.flyTo(location, 15);
     } else {
       map?.current?.flyTo(
         [defaultLocation?.latitude, defaultLocation?.longitude],
@@ -164,17 +367,7 @@ function App() {
     }
   }
 
-  const handleRouteFound = (data: any) => {
-    setRouteData(data);
-  };
-
-  const handleClearRoute = () => {
-    setRouteData(null);
-  };
-
-  if (isLoading || isRefetching) {
-    return <LoadingScreen />;
-  }
+  if (isLoading || isRefetching) return <LoadingScreen />;
 
   if (!defaultLocation)
     return (
@@ -187,106 +380,95 @@ function App() {
     );
 
   return (
-    <>
-      <MapContainer
-        ref={map}
-        id="map"
-        center={[defaultLocation.latitude, defaultLocation.longitude]}
-        zoom={15}
-        scrollWheelZoom
-        zoomControl={false}
-      >
-        <TileLayer url={leafletProvider.url} />
-        {!isLineDisabled && <LineMarkers />}
+    <MapContainer
+      ref={map}
+      id="map"
+      center={[defaultLocation.latitude, defaultLocation.longitude]}
+      zoom={15}
+      scrollWheelZoom
+      zoomControl={false}
+    >
+      <TileLayer url={leafletProvider.url} />
 
-        <BusStopsMarkers />
-        <DevicePositionMarkers />
+      {/* Regular map layers - show when NO route */}
+      {!routeData && (
+        <>
+          {!isLineDisabled && <LineMarkers />}
+          <BusStopsMarkers />
+        </>
+      )}
 
-        {/* Route visualization */}
-        {routeData && (
-          <RouteDisplay
-            routeData={routeData}
-            onClose={handleClearRoute}
-            mapRef={map}
-          />
-        )}
+      <DevicePositionMarkers />
 
-        {/* Zoom Control */}
-        <ZoomControl />
+      {/* Route visualization - show when route exists */}
+      {routeData && (
+        <>
+          <RouteVisualization routeData={routeData} />
+          <FitRouteBounds routeData={routeData} />
+        </>
+      )}
 
-        {/* Map Controls */}
-        <div className="map-controls">
-          {/* Filters button */}
+      <ZoomControl />
+
+      {/* Map Controls */}
+      <div className="map-controls">
+        <button
+          className="control-button"
+          onClick={() => setIsFiltersOpen(true)}
+          aria-label={t("controls.filters")}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 -960 960 960"
+            width="24px"
+            height="24px"
+            fill="#0c4a6e"
+          >
+            <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
+          </svg>
+        </button>
+
+        {!!window.env && (
           <button
-            className="control-button"
-            onClick={() => setIsFiltersOpen(true)}
-            aria-label={t("controls.filters")}
+            className={clsx("control-button", { active: displayLocation })}
+            onClick={getLocation}
+            aria-label={t("controls.my_location")}
           >
             <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 -960 960 960"
-              width="24px"
-              height="24px"
-              fill="#0c4a6e"
             >
-              <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
+              <circle
+                cx="12"
+                cy="12"
+                r="8"
+                stroke="#0c4a6e"
+                strokeWidth="2"
+                fill="none"
+              />
+              <circle cx="12" cy="12" r="3" fill="#0c4a6e" />
             </svg>
           </button>
-
-          {/* Location button */}
-          {!!window.env && (
-            <button
-              className={clsx("control-button", {
-                active: displayLocation,
-              })}
-              onClick={getLocation}
-              aria-label={t("controls.my_location")}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="8"
-                  stroke="#0c4a6e"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                <circle cx="12" cy="12" r="3" fill="#0c4a6e" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* User location marker */}
-        {displayLocation && location && (
-          <Marker position={location} title="Me" icon={userIcon()} />
         )}
+      </div>
 
-        {/* Filters modal */}
-        <Modal
-          isOpen={isFiltersOpen}
-          onRequestClose={() => setIsFiltersOpen(false)}
-          className="ReactModal__Content"
-          overlayClassName="ReactModal__Overlay"
-          closeTimeoutMS={300}
-        >
-          <Filters onApply={() => setIsFiltersOpen(false)} />
-        </Modal>
-      </MapContainer>
+      {displayLocation && location && (
+        <Marker position={location} title="Me" icon={userIcon()} />
+      )}
 
-      {/* Search Bar - Fixed at top */}
-      <SearchBar
-        onRouteFound={handleRouteFound}
-        onClearRoute={handleClearRoute}
-        currentLocation={location}
-      />
-    </>
+      <Modal
+        isOpen={isFiltersOpen}
+        onRequestClose={() => setIsFiltersOpen(false)}
+        className="ReactModal__Content"
+        overlayClassName="ReactModal__Overlay"
+        closeTimeoutMS={300}
+      >
+        <Filters onApply={() => setIsFiltersOpen(false)} />
+      </Modal>
+    </MapContainer>
   );
 }
 
