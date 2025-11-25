@@ -88,7 +88,7 @@ type RouteData = {
 
 // Custom marker icons for different stop types (same as RouteDisplay)
 const createStopIcon = (
-  action: "board" | "arrive" | "transfer" | "travel",
+  action: "board" | "arrive" | "transfer" | "travel" | "walk",
   stopName?: string
 ): L.DivIcon => {
   // For regular stops, use the bus stop icon style
@@ -127,6 +127,17 @@ const createStopIcon = (
   let iconSvg = "";
 
   switch (action) {
+    case "walk":
+      bgColor = "#6B7280"; // Gray for walk/current location
+      size = 36;
+      borderWidth = 3;
+      iconSvg = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="4" r="2" fill="white"/>
+          <path d="M13.5 7h-3l-1 4 2.5 2v7h2v-6l-1.5-2 .5-2 1.5 1.5V15h2V10l-2-2-.5-1z" fill="white"/>
+        </svg>
+      `;
+      break;
     case "board":
       bgColor = "#10b981"; // Green for start
       iconSvg = `
@@ -212,13 +223,13 @@ const getAllStopsFromRoute = (
   routeData: RouteData
 ): Array<{
   location: LatLngExpression;
-  action: "board" | "arrive" | "transfer" | "travel";
+  action: "board" | "arrive" | "transfer" | "travel" | "walk";
   name: string;
   line?: string;
 }> => {
   const stops: Array<{
     location: LatLngExpression;
-    action: "board" | "arrive" | "transfer" | "travel";
+    action: "board" | "arrive" | "transfer" | "travel" | "walk";
     name: string;
     line?: string;
   }> = [];
@@ -245,6 +256,23 @@ const getAllStopsFromRoute = (
   // Second pass: process all stops with correct actions
   isFirstBoarding = true;
   routeData.steps.forEach((step, stepIndex) => {
+    // Walk step - add start point if it's the first step
+    if (
+      (step.action === "walk" || step.type === "walk") &&
+      step.polyline &&
+      step.polyline.length > 0
+    ) {
+      // Only add walk start marker if it's the first step (from current location)
+      if (stepIndex === 0 && step.from) {
+        stops.push({
+          location: step.polyline[0],
+          action: "walk",
+          name: step.from,
+        });
+        processedStopNames.add(step.from);
+      }
+    }
+
     // Start stop - board action
     if (step.action === "board" && isFirstBoarding && step.at) {
       let location = null;
@@ -431,7 +459,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
   // Get all stops using the same logic as RouteMapModal
   const allStops = getAllStopsFromRoute(routeData);
 
-  // Get line labels for boarding points
+  // Get line labels for boarding points (including after transfers)
   const getLineLabels = () => {
     const labels: Array<{
       location: LatLngExpression;
@@ -440,6 +468,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
     }> = [];
 
     routeData.steps.forEach((step, stepIndex) => {
+      // Add label for board actions (first boarding and after transfers)
       if (step.action === "board" && step.line) {
         // Find location from next travel step's polyline
         for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
@@ -470,6 +499,8 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
   // Get action label for popup
   const getActionLabel = (action: string) => {
     switch (action) {
+      case "walk":
+        return t("route.walk");
       case "board":
         return t("route.board");
       case "arrive":
@@ -484,6 +515,8 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
   // Get background color for popup badge
   const getActionBgColor = (action: string) => {
     switch (action) {
+      case "walk":
+        return "#f3f4f6";
       case "board":
         return "#d1fae5";
       case "arrive":
@@ -495,20 +528,26 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
     }
   };
 
+  // Check if step is a walk step
+  const isWalkStep = (step: RouteStep) => {
+    return step.action === "walk" || step.type === "walk";
+  };
+
   return (
     <>
-      {/* Render polylines */}
+      {/* Render polylines for all steps */}
       {routeData.steps.map((step, index) => {
         if (step.polyline && step.polyline.length > 0) {
+          const isWalk = isWalkStep(step);
           return (
             <Polyline
               key={`route-polyline-${index}`}
               positions={step.polyline}
               pathOptions={{
-                color: step.color || "#0c4a6e",
-                weight: 6,
+                color: isWalk ? "#6B7280" : step.color || "#0c4a6e",
+                weight: isWalk ? 4 : 6,
                 opacity: 0.9,
-                dashArray: step.type === "walk" ? "10, 10" : undefined,
+                dashArray: isWalk ? "10, 10" : undefined,
               }}
             />
           );
