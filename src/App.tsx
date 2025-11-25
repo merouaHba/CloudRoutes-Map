@@ -151,7 +151,8 @@ const createStopIcon = (
       borderWidth = 3;
       iconSvg = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 17l5-5-5-5M8 7l-5 5 5 5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 10l3-3m0 0L7 4m3 3H4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17 14l-3 3m0 0l3 3m-3-3h6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       `;
       break;
