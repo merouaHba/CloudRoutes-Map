@@ -3131,3 +3131,10 @@ body:has(.route-results-wrapper) .leaflet-popup {
 .map-disabled .leaflet-control-container {
   pointer-events: none !important;
 }
+
+
+/* Map controls - WebView position (below search bar) */
+.map-controls-webview {
+  top: 140px !important;
+  /* Move down to avoid React Native search bar */
+}

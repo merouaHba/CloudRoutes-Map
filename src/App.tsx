@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import "./App.css";
 import "./i18n/index.ts";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  Polyline,
-} from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, Polyline } from "react-leaflet";
 import { LineMarkers } from "./components/LineMarkers.tsx";
 import { createClientApi } from "@cloudroutes/query";
 import { Env } from "./config/env.ts";
@@ -136,28 +130,15 @@ function LoadingScreen() {
         <div className="loading-icon-container">
           <div className="loading-icon-circle">
             <div className="loading-icon-inner">
-              <svg
-                width="44"
-                height="44"
-                viewBox="0 0 44 44"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M22 10C28.25 10 32.5 11.5 32.5 13.25V14V15.5C33.3284 15.5 34 16.1716 34 17V20C34 20.8284 33.3284 21.5 32.5 21.5V29.25C32.5 30.0784 31.8284 30.75 31 30.75V32.25C31 33.0784 30.3284 33.75 29.5 33.75H28C27.1716 33.75 26.5 33.0784 26.5 32.25V30.75H17.5V32.25C17.5 33.0784 16.8284 33.75 16 33.75H14.5C13.6716 33.75 13 33.0784 13 32.25V30.75C12.1716 30.75 11.5 30.0784 11.5 29.25V21.5C10.6716 21.5 10 20.8284 10 20V17C10 16.1716 10.6716 15.5 11.5 15.5V14V13.25C11.5 11.5 15.75 10 22 10Z"
-                  fill="#0c4a6e"
-                />
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 10C28.25 10 32.5 11.5 32.5 13.25V14V15.5C33.3284 15.5 34 16.1716 34 17V20C34 20.8284 33.3284 21.5 32.5 21.5V29.25C32.5 30.0784 31.8284 30.75 31 30.75V32.25C31 33.0784 30.3284 33.75 29.5 33.75H28C27.1716 33.75 26.5 33.0784 26.5 32.25V30.75H17.5V32.25C17.5 33.0784 16.8284 33.75 16 33.75H14.5C13.6716 33.75 13 33.0784 13 32.25V30.75C12.1716 30.75 11.5 30.0784 11.5 29.25V21.5C10.6716 21.5 10 20.8284 10 20V17C10 16.1716 10.6716 15.5 11.5 15.5V14V13.25C11.5 11.5 15.75 10 22 10Z" fill="#0c4a6e"/>
               </svg>
             </div>
           </div>
         </div>
-        <div>
-          <div className="loading-subtext">{t("loading")}</div>
-        </div>
+        <div><div className="loading-subtext">{t("loading")}</div></div>
         <div className="loading-spinner"></div>
-        <div className="loading-progress-bar">
-          <div className="loading-progress-fill"></div>
-        </div>
+        <div className="loading-progress-bar"><div className="loading-progress-fill"></div></div>
       </div>
     </div>
   );
@@ -170,21 +151,9 @@ function ZoomControl() {
 
   return (
     <div className="zoom-controls">
-      <button
-        className="zoom-button"
-        onClick={() => map.zoomIn()}
-        aria-label={t("controls.zoom_in")}
-      >
-        +
-      </button>
+      <button className="zoom-button" onClick={() => map.zoomIn()} aria-label={t("controls.zoom_in")}>+</button>
       <div className="zoom-divider" />
-      <button
-        className="zoom-button"
-        onClick={() => map.zoomOut()}
-        aria-label={t("controls.zoom_out")}
-      >
-        −
-      </button>
+      <button className="zoom-button" onClick={() => map.zoomOut()} aria-label={t("controls.zoom_out")}>−</button>
     </div>
   );
 }
@@ -233,11 +202,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
         for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
           const nextStep = routeData.steps[i];
           if (nextStep.action === "travel" && nextStep.polyline?.length) {
-            stops.push({
-              location: nextStep.polyline[0],
-              type: "start",
-              name: step.at,
-            });
+            stops.push({ location: nextStep.polyline[0], type: "start", name: step.at });
             break;
           }
         }
@@ -246,11 +211,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
 
       // Transfer stops
       if (step.action === "transfer" && step.location && step.at) {
-        stops.push({
-          location: step.location,
-          type: "transfer",
-          name: step.at,
-        });
+        stops.push({ location: step.location, type: "transfer", name: step.at });
       }
 
       // End stop
@@ -300,19 +261,31 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
 
 function App() {
   const { t, i18n } = useTranslation();
-  const {
-    data: defaultLocation,
-    isLoading,
-    refetch,
-    isRefetching,
-  } = useDefaultLocation();
+  const { data: defaultLocation, isLoading, refetch, isRefetching } = useDefaultLocation();
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [displayLocation, setDisplayLocation] = useState(false);
   const [routeData, setRouteData] = useState<RouteData | null>(null);
+  const [appReady, setAppReady] = useState(false);
   const map = useRef<any>(null);
   const leafletProvider = useGlobalStore((state) => state.leafletProvider);
+
+  // Check if running in React Native WebView
+  const isInWebView = !!window.ReactNativeWebView;
+
+  // Send ready signal to React Native when app is loaded
+  useEffect(() => {
+    if (!isLoading && !isRefetching && defaultLocation && !appReady) {
+      setAppReady(true);
+      // Small delay to ensure map is rendered
+      setTimeout(() => {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: "WEB_APP_READY" }));
+        }
+      }, 500);
+    }
+  }, [isLoading, isRefetching, defaultLocation, appReady]);
 
   // Handle messages from React Native
   useEffect(() => {
@@ -360,14 +333,12 @@ function App() {
     if (!displayLocation && location) {
       map?.current?.flyTo(location, 15);
     } else {
-      map?.current?.flyTo(
-        [defaultLocation?.latitude, defaultLocation?.longitude],
-        15
-      );
+      map?.current?.flyTo([defaultLocation?.latitude, defaultLocation?.longitude], 15);
     }
   }
 
-  if (isLoading || isRefetching) return <LoadingScreen />;
+  // Show loading only when NOT in WebView (React Native handles loading)
+  if ((isLoading || isRefetching) && !isInWebView) return <LoadingScreen />;
 
   if (!defaultLocation)
     return (
@@ -389,7 +360,7 @@ function App() {
       zoomControl={false}
     >
       <TileLayer url={leafletProvider.url} />
-
+      
       {/* Regular map layers - show when NO route */}
       {!routeData && (
         <>
@@ -397,7 +368,7 @@ function App() {
           <BusStopsMarkers />
         </>
       )}
-
+      
       <DevicePositionMarkers />
 
       {/* Route visualization - show when route exists */}
@@ -410,62 +381,27 @@ function App() {
 
       <ZoomControl />
 
-      {/* Map Controls */}
-      <div className="map-controls">
-        <button
-          className="control-button"
-          onClick={() => setIsFiltersOpen(true)}
-          aria-label={t("controls.filters")}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 -960 960 960"
-            width="24px"
-            height="24px"
-            fill="#0c4a6e"
-          >
+      {/* Map Controls - position lower when in WebView to avoid search bar */}
+      <div className={clsx("map-controls", { "map-controls-webview": isInWebView })}>
+        <button className="control-button" onClick={() => setIsFiltersOpen(true)} aria-label={t("controls.filters")}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24px" height="24px" fill="#0c4a6e">
             <path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z" />
           </svg>
         </button>
 
         {!!window.env && (
-          <button
-            className={clsx("control-button", { active: displayLocation })}
-            onClick={getLocation}
-            aria-label={t("controls.my_location")}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="8"
-                stroke="#0c4a6e"
-                strokeWidth="2"
-                fill="none"
-              />
+          <button className={clsx("control-button", { active: displayLocation })} onClick={getLocation} aria-label={t("controls.my_location")}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="8" stroke="#0c4a6e" strokeWidth="2" fill="none" />
               <circle cx="12" cy="12" r="3" fill="#0c4a6e" />
             </svg>
           </button>
         )}
       </div>
 
-      {displayLocation && location && (
-        <Marker position={location} title="Me" icon={userIcon()} />
-      )}
+      {displayLocation && location && <Marker position={location} title="Me" icon={userIcon()} />}
 
-      <Modal
-        isOpen={isFiltersOpen}
-        onRequestClose={() => setIsFiltersOpen(false)}
-        className="ReactModal__Content"
-        overlayClassName="ReactModal__Overlay"
-        closeTimeoutMS={300}
-      >
+      <Modal isOpen={isFiltersOpen} onRequestClose={() => setIsFiltersOpen(false)} className="ReactModal__Content" overlayClassName="ReactModal__Overlay" closeTimeoutMS={300}>
         <Filters onApply={() => setIsFiltersOpen(false)} />
       </Modal>
     </MapContainer>
