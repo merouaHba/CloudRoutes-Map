@@ -11,7 +11,6 @@ export const busIcon = (name: string, angle: number) =>
   L.divIcon({
     className: "bus-icon",
     html: `<div class="bus-icon-container">
-        <div class="bus-name">${name}</div>
           <div class="bus-direction" style="--angle: ${angle}deg;">
             <svg width="37" height="46" viewBox="0 0 37 46" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="18.5" cy="27.5" r="18" fill="white" stroke="#9CA3AF"/>
