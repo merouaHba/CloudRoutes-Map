@@ -182,6 +182,30 @@ const createStopIcon = (
   });
 };
 
+// Line label icon (like Google Maps "19F", "30D" badges)
+const createLineLabelIcon = (lineName: string, color: string): L.DivIcon => {
+  return L.divIcon({
+    className: "line-label-icon",
+    html: `
+      <div style="
+        background: ${color || "#FBBC04"};
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+        border: 2px solid white;
+      ">
+        ${lineName}
+      </div>
+    `,
+    iconSize: [60, 24],
+    iconAnchor: [30, -10],
+  });
+};
+
 // Get all stops from route data with their types
 const getAllStopsFromRoute = (
   routeData: RouteData
@@ -387,7 +411,10 @@ function FitRouteBounds({ routeData }: { routeData: RouteData | null }) {
 
     if (allCoordinates.length > 0) {
       setTimeout(() => {
-        map.fitBounds(allCoordinates as any, { padding: [80, 80] });
+        map.fitBounds(allCoordinates as any, {
+          padding: [50, 50],
+          maxZoom: 16,
+        });
       }, 300);
     }
   }, [routeData, map]);
@@ -402,6 +429,42 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
 
   // Get all stops using the same logic as RouteMapModal
   const allStops = getAllStopsFromRoute(routeData);
+
+  // Get line labels for boarding points
+  const getLineLabels = () => {
+    const labels: Array<{
+      location: LatLngExpression;
+      line: string;
+      color: string;
+    }> = [];
+
+    routeData.steps.forEach((step, stepIndex) => {
+      if (step.action === "board" && step.line) {
+        // Find location from next travel step's polyline
+        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
+          const nextStep = routeData.steps[i];
+          if (
+            nextStep.action === "travel" &&
+            nextStep.polyline &&
+            nextStep.polyline.length > 0
+          ) {
+            // Place label slightly along the polyline (10% in)
+            const labelIndex = Math.floor(nextStep.polyline.length * 0.1);
+            labels.push({
+              location: nextStep.polyline[labelIndex] || nextStep.polyline[0],
+              line: step.line,
+              color: nextStep.color || "#FBBC04",
+            });
+            break;
+          }
+        }
+      }
+    });
+
+    return labels;
+  };
+
+  const lineLabels = getLineLabels();
 
   // Get action label for popup
   const getActionLabel = (action: string) => {
@@ -451,6 +514,16 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
         }
         return null;
       })}
+
+      {/* Render line labels at boarding points */}
+      {lineLabels.map((label, index) => (
+        <Marker
+          key={`line-label-${index}`}
+          position={label.location}
+          icon={createLineLabelIcon(label.line, label.color)}
+          zIndexOffset={1000}
+        />
+      ))}
 
       {/* Render all stop markers with popups */}
       {allStops.map((stop, index) => (

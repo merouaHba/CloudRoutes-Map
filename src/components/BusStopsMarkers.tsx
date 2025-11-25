@@ -75,10 +75,10 @@ export function BusStopsMarkers() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         stop={selectedStop}
-        onSetAsDestination={() => {
-          // This will be passed from parent component
-          console.log("Set as destination:", selectedStop);
-        }}
+        // onSetAsDestination={() => {
+        //   // This will be passed from parent component
+        //   console.log("Set as destination:", selectedStop);
+        // }}
       />
     </>
   );

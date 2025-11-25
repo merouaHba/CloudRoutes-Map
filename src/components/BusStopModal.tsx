@@ -22,7 +22,7 @@ export function BusStopModal({
   isOpen,
   onClose,
   stop,
-  onSetAsDestination,
+  // onSetAsDestination,
 }: BusStopModalProps) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
@@ -175,7 +175,7 @@ export function BusStopModal({
           </div>
 
           {/* Actions */}
-          <div className="bus-stop-actions">
+          {/* <div className="bus-stop-actions">
             <button
               className="bus-stop-action-btn bus-stop-action-primary"
               onClick={() => {
@@ -229,7 +229,7 @@ export function BusStopModal({
               </svg>
               <span>{t("bus_stop.view_times")}</span>
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </Modal>
