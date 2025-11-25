@@ -3138,3 +3138,19 @@ body:has(.route-results-wrapper) .leaflet-popup {
   top: 140px !important;
   /* Move down to avoid React Native search bar */
 }
+
+/* Line label icons */
+.line-label-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.line-label-icon>div {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.line-label-icon>div:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
