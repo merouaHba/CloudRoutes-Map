@@ -28,14 +28,7 @@ function BusMarkerWithHoverPopup({
       icon={busIcon( position.course)}
       title={device?.name ?? "Unknown"}
       zIndexOffset={1000}
-      eventHandlers={{
-        mouseover: () => {
-          markerRef.current?.openPopup();
-        },
-        mouseout: () => {
-          markerRef.current?.closePopup();
-        },
-      }}
+     
     >
       <Popup>
         {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}

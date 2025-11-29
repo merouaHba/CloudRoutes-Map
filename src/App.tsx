@@ -556,14 +556,14 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
       })}
 
       {/* Render line labels at boarding points */}
-      {lineLabels.map((label, index) => (
+       {lineLabels.map((label, index) => (
         <Marker
           key={`line-label-${index}`}
           position={label.location}
           icon={createLineLabelIcon(label.line, label.color)}
           zIndexOffset={1000}
         />
-      ))}
+      ))} 
 
       {/* Render all stop markers with popups */}
       {allStops.map((stop, index) => (
