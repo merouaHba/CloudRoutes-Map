@@ -52,9 +52,9 @@ export function AllDevicePositionMarkers() {
         title={device?.name ?? "Unknown"}
         zIndexOffset={1000}
       >
-        <Popup>
+        {/* <Popup>
           {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}
-        </Popup>
+        </Popup> */}
       </Marker>
     );
   });

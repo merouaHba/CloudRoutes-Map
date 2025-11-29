@@ -36,7 +36,7 @@ export function BusStopsMarkers() {
           ] as [number, number],
           lines: stop.lines.map((line) => ({
             name: line.name,
-            color: (line as any).color || "##0c4a6e", // Fallback to indigo if color not available
+            color: (line as any).color || "#0c4a6e", // Fallback to indigo if color not available
           })),
         };
       });
