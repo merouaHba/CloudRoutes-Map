@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useDevicePosition } from "../../hooks/use-device-position.ts";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Device, DeviceEvent, MapFilters, PositionEvent } from "../../types.ts";
 import { capitalize, isPositionEvent } from "../../helpers.ts";
 import { useDevicePositionListener } from "../../hooks/use-device-position-listener.ts";
@@ -10,13 +10,45 @@ import { useLines } from "@cloudroutes/query/lines";
 import { Line } from "@cloudroutes/core/lines";
 import { useFilterStore } from "../../hooks/use-filter-store.ts";
 import { isEmpty } from "@cloudroutes/core";
+import { Marker as LeafletMarker } from "leaflet";
+
+function BusMarkerWithHoverPopup({
+  device,
+  position,
+}: {
+  device: Device;
+  position: { latitude: number; longitude: number; course: number };
+}) {
+  const markerRef = useRef<LeafletMarker>(null);
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[position.latitude, position.longitude]}
+      icon={busIcon( position.course)}
+      title={device?.name ?? "Unknown"}
+      zIndexOffset={1000}
+      eventHandlers={{
+        mouseover: () => {
+          markerRef.current?.openPopup();
+        },
+        mouseout: () => {
+          markerRef.current?.closePopup();
+        },
+      }}
+    >
+      <Popup>
+        {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}
+      </Popup>
+    </Marker>
+  );
+}
 
 export function LineOnlyDevicePositionMarkers() {
   const filters = useFilterStore((state) => state.filters);
   const queryClient = useQueryClient();
   const [positions, devices] = useDevicePosition();
   const { data: lines } = useLines();
-
 
   const onPositionUpdate = useCallback(
     (e: MessageEvent<string>) => {
@@ -29,7 +61,12 @@ export function LineOnlyDevicePositionMarkers() {
           );
 
           return update
-            ? { ...p, latitude: update.latitude, longitude: update.longitude, course: update.course }
+            ? {
+                ...p,
+                latitude: update.latitude,
+                longitude: update.longitude,
+                course: update.course,
+              }
             : p;
         });
 
@@ -43,29 +80,21 @@ export function LineOnlyDevicePositionMarkers() {
 
   useDevicePositionListener(onPositionUpdate);
 
-
   if (!positions?.data || !devices?.data || !lines) return <></>;
 
   const filteredDevices = filteredDevicesData(devices.data, lines, filters);
 
-
   return filteredDevices.map((device) => {
     const position = positions.data.find((p) => p.deviceId === device.id);
 
-    if (!position) return <></>;
+    if (!position) return null;
 
     return (
-      <Marker
+      <BusMarkerWithHoverPopup
         key={device.id + "_" + position.latitude + "_" + position.longitude}
-        position={[position.latitude, position.longitude]}
-        icon={busIcon( position.course)}
-        title={device?.name ?? "Unknown"}
-        zIndexOffset={1000}
-      >
-        <Popup>
-          {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}
-        </Popup>
-      </Marker>
+        device={device}
+        position={position}
+      />
     );
   });
 }
@@ -79,19 +108,18 @@ function filteredDevicesData(
   if (filters.line === "all") return devices;
   const busesIds: string[] = [];
 
-
   lines
     .filter((line) => filters.line.includes(line.name))
     .forEach((line) => {
       line.buses.forEach((bus) => {
-        if (!isEmpty(bus.traccar_device_id) && !busesIds.includes(bus.traccar_device_id)) {
+        if (
+          !isEmpty(bus.traccar_device_id) &&
+          !busesIds.includes(bus.traccar_device_id)
+        ) {
           busesIds.push(bus.traccar_device_id);
         }
       });
     });
-
-
-
 
   return devices.filter((device) => busesIds.includes(device.uniqueId));
 }

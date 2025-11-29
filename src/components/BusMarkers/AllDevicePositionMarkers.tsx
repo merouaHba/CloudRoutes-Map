@@ -1,16 +1,47 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useDevicePosition } from "../../hooks/use-device-position.ts";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { DeviceEvent, PositionEvent } from "../../types.ts";
-import { isPositionEvent } from "../../helpers.ts";
+import { capitalize, isPositionEvent } from "../../helpers.ts";
 import { useDevicePositionListener } from "../../hooks/use-device-position-listener.ts";
-import { Marker } from "react-leaflet";
+import { Marker, Popup } from "react-leaflet";
 import { busIcon } from "../../icons.ts";
+import { Marker as LeafletMarker } from "leaflet";
+
+function BusMarkerWithHoverPopup({ 
+  device, 
+  position 
+}: { 
+  device: { id: number; name: string; category: string | null }; 
+  position: { latitude: number; longitude: number; course: number } 
+}) {
+  const markerRef = useRef<LeafletMarker>(null);
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[position.latitude, position.longitude]}
+      icon={busIcon(position.course)}
+      zIndexOffset={1000}
+      eventHandlers={{
+        mouseover: () => {
+          markerRef.current?.openPopup();
+        },
+        mouseout: () => {
+          markerRef.current?.closePopup();
+        },
+      }}
+    >
+      <Popup>
+        {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}
+      </Popup>
+    </Marker>
+  );
+}
 
 export function AllDevicePositionMarkers() {
   const queryClient = useQueryClient();
   const [positions, devices] = useDevicePosition();
-
 
   const onPositionUpdate = useCallback(
     (e: MessageEvent<string>) => {
@@ -42,20 +73,14 @@ export function AllDevicePositionMarkers() {
   return devices.data.map((device) => {
     const position = positions.data.find((p) => p.deviceId === device.id);
 
-    if (!position) return <></>;
+    if (!position) return null;
 
     return (
-      <Marker
+      <BusMarkerWithHoverPopup
         key={device.id}
-        position={[position.latitude, position.longitude]}
-        icon={busIcon( position.course)}
-        // title={device?.name ?? "Unknown"}
-        zIndexOffset={1000}
-      >
-        {/* <Popup>
-          {capitalize(device?.category || "bus")} - {device?.name ?? "Unknown"}
-        </Popup> */}
-      </Marker>
+        device={device}
+        position={position}
+      />
     );
   });
 }
