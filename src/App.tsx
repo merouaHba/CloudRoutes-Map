@@ -735,13 +735,12 @@ function App() {
       zoomControl={false}
     >
       <TileLayer url={leafletProvider.url} />
-
+      <DevicePositionMarkers />
       {/* Regular map layers - show when NO route */}
       {!routeData && (
         <>
           {!isLineDisabled && <LineMarkers />}
           <BusStopsMarkers />
-          <DevicePositionMarkers />
         </>
       )}
 
