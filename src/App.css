@@ -677,6 +677,10 @@
   border-color: var(--primary-blue);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+  -webkit-transform: translateY(-2px);
+  -moz-transform: translateY(-2px);
+  -ms-transform: translateY(-2px);
+  -o-transform: translateY(-2px);
 }
 
 .control-button:active {
@@ -697,6 +701,10 @@
 
 .control-button svg {
   transition: all 0.2s ease;
+  -webkit-transition: all 0.2s ease;
+  -moz-transition: all 0.2s ease;
+  -ms-transition: all 0.2s ease;
+  -o-transition: all 0.2s ease;
 }
 
 /* ============================================
@@ -1365,7 +1373,7 @@
   border-radius: 16px !important;
   box-shadow: 0 4px 10px rgb(6, 182, 212,0.5) !important;
   border: 1px solid var(--primary-blue) !important;
-  padding: 6px 16px !important;
+  padding: 5px 28px 5px 20px !important;
   background: white !important;
   overflow: hidden !important;
   -webkit-border-radius: 16px !important;
@@ -1381,8 +1389,10 @@
   max-width: 280px !important;
 }
 .leaflet-popup-close-button {
-  display: none !important;
-}
+    font-weight: bold !important;
+      color: var(--primary-blue) !important;
+      padding: 2px  !important;
+    }
 .leaflet-popup-tip {
   display:none !important;
   background: white !important;

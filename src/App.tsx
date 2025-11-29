@@ -459,7 +459,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
   // Get all stops using the same logic as RouteMapModal
   const allStops = getAllStopsFromRoute(routeData);
 
-  // Get line labels for boarding points (including after transfers)
+  // Get line labels for ALL travel segments (not just boarding points)
   const getLineLabels = () => {
     const labels: Array<{
       location: LatLngExpression;
@@ -467,27 +467,21 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
       color: string;
     }> = [];
 
-    routeData.steps.forEach((step, stepIndex) => {
-      // Add label for board actions (first boarding and after transfers)
-      if (step.action === "board" && step.line) {
-        // Find location from next travel step's polyline
-        for (let i = stepIndex + 1; i < routeData.steps.length; i++) {
-          const nextStep = routeData.steps[i];
-          if (
-            nextStep.action === "travel" &&
-            nextStep.polyline &&
-            nextStep.polyline.length > 0
-          ) {
-            // Place label slightly along the polyline (10% in)
-            const labelIndex = Math.floor(nextStep.polyline.length * 0.1);
-            labels.push({
-              location: nextStep.polyline[labelIndex] || nextStep.polyline[0],
-              line: step.line,
-              color: nextStep.color || "#FBBC04",
-            });
-            break;
-          }
-        }
+    routeData.steps.forEach((step) => {
+      // Add label for all travel steps (each bus segment gets a label)
+      if (
+        step.action === "travel" &&
+        step.line &&
+        step.polyline &&
+        step.polyline.length > 0
+      ) {
+        // Place label at approximately 15% along the polyline for better visibility
+        const labelIndex = Math.floor(step.polyline.length * 0.15);
+        labels.push({
+          location: step.polyline[labelIndex] || step.polyline[0],
+          line: step.line,
+          color: step.color || "#FBBC04",
+        });
       }
     });
 
@@ -528,6 +522,22 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
     }
   };
 
+  // Get text color for popup badge
+  const getActionTextColor = (action: string) => {
+    switch (action) {
+      case "walk":
+        return "#374151";
+      case "board":
+        return "#065f46";
+      case "arrive":
+        return "#991b1b";
+      case "transfer":
+        return "#92400e";
+      default:
+        return "#0c4a6e";
+    }
+  };
+
   // Check if step is a walk step
   const isWalkStep = (step: RouteStep) => {
     return step.action === "walk" || step.type === "walk";
@@ -555,17 +565,17 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
         return null;
       })}
 
-      {/* Render line labels at boarding points */}
-       {lineLabels.map((label, index) => (
+      {/* Render line labels for ALL travel segments */}
+      {lineLabels.map((label, index) => (
         <Marker
           key={`line-label-${index}`}
           position={label.location}
           icon={createLineLabelIcon(label.line, label.color)}
           zIndexOffset={1000}
         />
-      ))} 
+      ))}
 
-      {/* Render all stop markers with popups */}
+      {/* Render all stop markers with popups - styled like BusStopModal */}
       {allStops.map((stop, index) => (
         <Marker
           key={`route-stop-${index}-${stop.name}`}
@@ -576,45 +586,138 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
           <Popup>
             <div
               style={{
-                textAlign: "center",
-                padding: "8px",
-                minWidth: "150px",
+                padding: "0",
+                minWidth: "200px",
+                direction: isRTL ? "rtl" : "ltr",
               }}
             >
+              {/* Popup Header - styled like BusStopModal */}
               <div
                 style={{
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                  marginBottom: "6px",
-                  color: "#1f2937",
-                  direction: isRTL ? "rtl" : "ltr",
+                  background:
+                    "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
+                  padding: "12px 14px",
+                  borderRadius: "0",
+                  marginBottom: "0",
                 }}
               >
-                {stop.name}
-              </div>
-              {stop.line && (
                 <div
                   style={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    marginTop: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
                   }}
                 >
-                  {t("filters.lines")}: {stop.line}
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      background: "white",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 20 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M20 3V12C20 12.71 19.62 13.36 19 13.72V15.25C19 15.66 18.66 16 18.25 16H17.75C17.34 16 17 15.66 17 15.25V14H10V15.25C10 15.66 9.66 16 9.25 16H8.75C8.34 16 8 15.66 8 15.25V13.72C7.39 13.36 7 12.71 7 12V3C7 0 10 0 13.5 0C17 0 20 0 20 3Z"
+                        fill="#0c4a6e"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    style={{
+                      color: "white",
+                      fontWeight: "700",
+                      fontSize: "14px",
+                      lineHeight: "1.3",
+                      flex: 1,
+                    }}
+                  >
+                    {stop.name}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Popup Body */}
               <div
                 style={{
-                  fontSize: "11px",
-                  color: "#9ca3af",
-                  marginTop: "6px",
-                  padding: "4px 8px",
-                  backgroundColor: getActionBgColor(stop.action),
-                  borderRadius: "6px",
-                  fontWeight: "600",
+                  padding: "12px 14px",
+                  background: "white",
                 }}
               >
-                {getActionLabel(stop.action)}
+                {/* Line info if available */}
+                {stop.line && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "10px",
+                      padding: "8px 10px",
+                      background: "#f0f9ff",
+                      borderRadius: "8px",
+                      border: "1px solid #e0f2fe",
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7 18V7.414a1 1 0 01.293-.707l2.414-2.414A1 1 0 0110.414 4H17a1 1 0 011 1v13M7 14h10"
+                        stroke="#0891b2"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "#0891b2",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {t("filters.lines")}: {stop.line}
+                    </span>
+                  </div>
+                )}
+
+                {/* Action type badge */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "8px 12px",
+                    backgroundColor: getActionBgColor(stop.action),
+                    borderRadius: "8px",
+                    border: `1px solid ${getActionBgColor(stop.action)}`,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: getActionTextColor(stop.action),
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {getActionLabel(stop.action)}
+                  </span>
+                </div>
               </div>
             </div>
           </Popup>
