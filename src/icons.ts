@@ -7,7 +7,7 @@ export const busStopIcon = new L.Icon({
   iconSize: new L.Point(16, 16),
 });
 
-export const busIcon = (name: string, angle: number) =>
+export const busIcon = ( angle: number) =>
   L.divIcon({
     className: "bus-icon",
     html: `<div class="bus-icon-container">

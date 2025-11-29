@@ -48,7 +48,7 @@ export function AllDevicePositionMarkers() {
       <Marker
         key={device.id}
         position={[position.latitude, position.longitude]}
-        icon={busIcon(device?.name ?? "Unknown", position.course)}
+        icon={busIcon( position.course)}
         // title={device?.name ?? "Unknown"}
         zIndexOffset={1000}
       >
