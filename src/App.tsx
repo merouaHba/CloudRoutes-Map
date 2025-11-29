@@ -200,21 +200,28 @@ const createLineLabelIcon = (lineName: string, color: string): L.DivIcon => {
     className: "line-label-icon",
     html: `
       <div style="
-        background: ${color || "#FBBC04"};
-        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: white;
+        color: ${color || "#06b6d4"};
         padding: 4px 10px;
-        border-radius: 4px;
-        font-weight: bold;
-        font-size: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 11px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         white-space: nowrap;
-        border: 2px solid white;
+        border: 2px solid ${color || "#06b6d4"};
+        transform: translateX(-50%);
       ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="${color || "#06b6d4"}">
+          <path d="M12 2C8 2 4 2.5 4 6v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2l2-2h4l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 15c-.83 0-1.5-.67-1.5-1.5S6.67 12 7.5 12s1.5.67 1.5 1.5S8.33 15 7.5 15zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM18 10H6V6h12v4z"/>
+        </svg>
         ${lineName}
       </div>
     `,
-    iconSize: [60, 24],
-    iconAnchor: [30, -10],
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
   });
 };
 
