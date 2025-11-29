@@ -2,9 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useDevicePosition } from "../../hooks/use-device-position.ts";
 import { useCallback } from "react";
 import { DeviceEvent, PositionEvent } from "../../types.ts";
-import { capitalize, isPositionEvent } from "../../helpers.ts";
+import { isPositionEvent } from "../../helpers.ts";
 import { useDevicePositionListener } from "../../hooks/use-device-position-listener.ts";
-import { Marker, Popup } from "react-leaflet";
+import { Marker } from "react-leaflet";
 import { busIcon } from "../../icons.ts";
 
 export function AllDevicePositionMarkers() {
@@ -49,7 +49,7 @@ export function AllDevicePositionMarkers() {
         key={device.id}
         position={[position.latitude, position.longitude]}
         icon={busIcon(device?.name ?? "Unknown", position.course)}
-        title={device?.name ?? "Unknown"}
+        // title={device?.name ?? "Unknown"}
         zIndexOffset={1000}
       >
         {/* <Popup>
