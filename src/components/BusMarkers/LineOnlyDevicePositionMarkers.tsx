@@ -58,7 +58,7 @@ export function LineOnlyDevicePositionMarkers() {
       <Marker
         key={device.id + "_" + position.latitude + "_" + position.longitude}
         position={[position.latitude, position.longitude]}
-        icon={busIcon(device?.name ?? "Unknown", position.course)}
+        icon={busIcon( position.course)}
         title={device?.name ?? "Unknown"}
         zIndexOffset={1000}
       >
