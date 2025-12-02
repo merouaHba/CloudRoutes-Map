@@ -86,36 +86,30 @@ type RouteData = {
   };
 };
 
-// Custom marker icons for different stop types (same as RouteDisplay)
+// Custom marker icons for different stop types - Small dots like Google Maps
 const createStopIcon = (
   action: "board" | "arrive" | "transfer" | "travel" | "walk",
-  stopName?: string
+  stopName?: string,
+  lineColor?: string
 ): L.DivIcon => {
-  // For regular stops, use the bus stop icon style
+  // For regular/intermediate stops, use small dots like Google Maps
   if (action === "travel") {
+    const dotColor = lineColor || "#06b6d4";
     return L.divIcon({
       className: "custom-bus-stop-icon",
       html: `
         <div style="
-          width: 30px;
-          height: 30px;
-          background: white;
-          border: 2px solid #06b6d4;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s ease;
-        " title="${stopName || ""}">
-          <svg width="20" height="20" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 3V12C20 12.71 19.62 13.36 19 13.72V15.25C19 15.66 18.66 16 18.25 16H17.75C17.34 16 17 15.66 17 15.25V14H10V15.25C10 15.66 9.66 16 9.25 16H8.75C8.34 16 8 15.66 8 15.25V13.72C7.39 13.36 7 12.71 7 12V3C7 0 10 0 13.5 0C17 0 20 0 20 3ZM11 11C11 10.45 10.55 10 10 10C9.45 10 9 10.45 9 11C9 11.55 9.45 12 10 12C10.55 12 11 11.55 11 11ZM18 11C18 10.45 17.55 10 17 10C16.45 10 16 10.45 16 11C16 11.55 16.45 12 17 12C17.55 12 18 11.55 18 11ZM18 3H9V7H18V3ZM5 5.5C4.97 4.12 3.83 3 2.45 3.05C1.07 3.08 -0.0299996 4.22 4.40981e-07 5.6C0.0300004 6.77 0.86 7.77 2 8V16H3V8C4.18 7.76 5 6.71 5 5.5Z" fill="#06b6d4"/>
-          </svg>
-        </div>
+          width: 10px;
+          height: 10px;
+          background: ${dotColor};
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        " title="${stopName || ""}"></div>
       `,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
-      popupAnchor: [0, -15],
+      iconSize: [10, 10],
+      iconAnchor: [5, 5],
+      popupAnchor: [0, -5],
     });
   }
 
@@ -233,12 +227,14 @@ const getAllStopsFromRoute = (
   action: "board" | "arrive" | "transfer" | "travel" | "walk";
   name: string;
   line?: string;
+  color?: string;
 }> => {
   const stops: Array<{
     location: LatLngExpression;
     action: "board" | "arrive" | "transfer" | "travel" | "walk";
     name: string;
     line?: string;
+    color?: string;
   }> = [];
 
   let isFirstBoarding = true;
@@ -343,6 +339,7 @@ const getAllStopsFromRoute = (
             action: "travel",
             name: stopName,
             line: step.line,
+            color: step.color,
           });
           processedStopNames.add(stopName);
         }
@@ -559,7 +556,7 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
         <Marker
           key={`route-stop-${index}-${stop.name}`}
           position={stop.location}
-          icon={createStopIcon(stop.action, stop.name)}
+          icon={createStopIcon(stop.action, stop.name, stop.color)}
           title={stop.name}
         >
           <Popup>
