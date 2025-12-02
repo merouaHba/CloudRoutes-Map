@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
 import "./App.css";
 import "./i18n/index.ts";
 import {
@@ -519,23 +520,58 @@ function RouteVisualization({ routeData }: { routeData: RouteData }) {
     return step.action === "walk" || step.type === "walk";
   };
 
+  // Helper to darken a color for the border
+  const darkenColor = (color: string, amount: number = 0.3): string => {
+    // Handle hex colors
+    if (color.startsWith("#")) {
+      const hex = color.slice(1);
+      const num = parseInt(hex, 16);
+      const r = Math.max(0, ((num >> 16) & 0xff) * (1 - amount));
+      const g = Math.max(0, ((num >> 8) & 0xff) * (1 - amount));
+      const b = Math.max(0, (num & 0xff) * (1 - amount));
+      return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    }
+    return color;
+  };
+
   return (
     <>
-      {/* Render polylines for all steps */}
+      {/* Render polylines for all steps - Google Maps style with border */}
       {routeData.steps.map((step, index) => {
         if (step.polyline && step.polyline.length > 0) {
           const isWalk = isWalkStep(step);
+          const mainColor = isWalk ? "#6B7280" : step.color || "#4285F4";
+          const borderColor = isWalk
+            ? "#4B5563"
+            : darkenColor(step.color || "#4285F4", 0.4);
+
           return (
-            <Polyline
-              key={`route-polyline-${index}`}
-              positions={step.polyline}
-              pathOptions={{
-                color: isWalk ? "#6B7280" : step.color || "#0c4a6e",
-                weight: isWalk ? 4 : 6,
-                opacity: 0.9,
-                dashArray: isWalk ? "10, 10" : undefined,
-              }}
-            />
+            <React.Fragment key={`route-polyline-${index}`}>
+              {/* Border/outline polyline (darker, thicker) */}
+              <Polyline
+                positions={step.polyline}
+                pathOptions={{
+                  color: borderColor,
+                  weight: isWalk ? 6 : 10,
+                  opacity: 1,
+                  lineCap: "round",
+                  lineJoin: "round",
+                  dashArray: isWalk ? "1, 12" : undefined,
+                }}
+              />
+              {/* Main route polyline (lighter, thinner) */}
+              <Polyline
+                positions={step.polyline}
+                pathOptions={{
+                  color: mainColor,
+                  weight: isWalk ? 4 : 6,
+                  opacity: 1,
+                  lineCap: "round",
+                  lineJoin: "round",
+                  dashArray: isWalk ? "1, 12" : undefined,
+                }}
+              />
+            </React.Fragment>
           );
         }
         return null;
@@ -708,7 +744,7 @@ function App() {
   const {
     data: defaultLocation,
     isLoading,
-    refetch,
+    // refetch,
     isRefetching,
   } = useDefaultLocation();
 
@@ -792,17 +828,18 @@ function App() {
   }
 
   // Show loading only when NOT in WebView (React Native handles loading)
-  if ((isLoading || isRefetching) && !isInWebView) return <LoadingScreen />;
+  if (((isLoading || isRefetching) && !isInWebView) || !defaultLocation)
+    return <LoadingScreen />;
 
-  if (!defaultLocation)
-    return (
-      <div className="center min-h-screen">
-        <div className="vstack align-items-center">
-          <h1>{t("search.no_route_found")}</h1>
-          <button onClick={() => refetch()}>{t("search.searching")}</button>
-        </div>
-      </div>
-    );
+  // if (!defaultLocation)
+  //   return (
+  //     <div className="center min-h-screen">
+  //       <div className="vstack align-items-center">
+  //         <h1>{t("search.no_route_found")}</h1>
+  //         <button onClick={() => refetch()}>{t("search.searching")}</button>
+  //       </div>
+  //     </div>
+  //   );
 
   return (
     <MapContainer
