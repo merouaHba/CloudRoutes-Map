@@ -365,39 +365,11 @@ const getAllStopsFromRoute = (
   return stops;
 };
 
-// Loading Screen Component
+// Loading Screen Component - Simple white background with cyan spinner
 function LoadingScreen() {
-  const { t } = useTranslation();
-
   return (
-    <div className="map-loading-overlay">
-      <div className="loading-content">
-        <div className="loading-icon-container">
-          <div className="loading-icon-circle">
-            <div className="loading-icon-inner">
-              <svg
-                width="44"
-                height="44"
-                viewBox="0 0 44 44"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M22 10C28.25 10 32.5 11.5 32.5 13.25V14V15.5C33.3284 15.5 34 16.1716 34 17V20C34 20.8284 33.3284 21.5 32.5 21.5V29.25C32.5 30.0784 31.8284 30.75 31 30.75V32.25C31 33.0784 30.3284 33.75 29.5 33.75H28C27.1716 33.75 26.5 33.0784 26.5 32.25V30.75H17.5V32.25C17.5 33.0784 16.8284 33.75 16 33.75H14.5C13.6716 33.75 13 33.0784 13 32.25V30.75C12.1716 30.75 11.5 30.0784 11.5 29.25V21.5C10.6716 21.5 10 20.8284 10 20V17C10 16.1716 10.6716 15.5 11.5 15.5V14V13.25C11.5 11.5 15.75 10 22 10Z"
-                  fill="#0c4a6e"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div className="loading-subtext">{t("loading")}</div>
-        </div>
-        <div className="loading-spinner"></div>
-        <div className="loading-progress-bar">
-          <div className="loading-progress-fill"></div>
-        </div>
-      </div>
+    <div className="map-loading-overlay-simple">
+      <div className="loading-spinner-cyan"></div>
     </div>
   );
 }
