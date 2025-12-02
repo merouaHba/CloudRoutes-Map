@@ -2,7 +2,7 @@
    CSS VARIABLES
    ============================================ */
 :root {
-  --primary-blue: #06b6d4;
+  --primary-blue: #06b6d4
   --dark-blue: #0a3a5c;
   --medium-blue: #0c4a6e;
   --light-blue: #164e63;
@@ -1573,7 +1573,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 2px 8px rgba(67, 56, 202, 0.2));
+  filter: drop-shadow(0 2px 8px rgba(6, 182, 216, 0.2));
+  -webkit-filter: drop-shadow(0 2px 8px rgba(6, 182, 216, 0.2));
 }
 
 .leaflet-marker-icon {
